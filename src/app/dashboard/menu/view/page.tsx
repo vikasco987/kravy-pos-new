@@ -183,14 +183,14 @@
 //                   {cat.items.map((item) => {
 //                     const inCart = cart[item.id]?.quantity || 0;
 //                     return (
-//                       <motion.div
+//                       <div
 //                         key={item.id}
 //                         className={`border rounded-2xl p-2 shadow-md hover:shadow-xl transition relative cursor-pointer flex flex-col items-center ${
 //                           inCart > 0 ? "bg-green-100" : "bg-white"
 //                         }`}
 //                         onClick={() => addToCart(item)}
-//                         whileHover={{ scale: 1.03 }}
-//                         layout
+//                         
+//                         
 //                       >
 //                         {inCart > 0 && (
 //                           <button
@@ -207,7 +207,7 @@
 
 //                         <div className="w-full h-32 relative rounded-xl overflow-hidden mb-2">
 //                           {item.imageUrl ? (
-//                             // next/image requires parent relative and fill for layout fill
+//                             // next/image requires parent relative and fill for  fill
 //                             <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
 //                           ) : (
 //                             <div className="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400 rounded-xl">
@@ -226,19 +226,19 @@
 
 //                         <AnimatePresence>
 //                           {inCart > 0 && (
-//                             <motion.div
+//                             <div
 //                               key={inCart}
 //                               className="absolute bottom-2 left-2 bg-green-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg"
-//                               initial={{ scale: 0, opacity: 0 }}
-//                               animate={{ scale: 1, opacity: 1 }}
-//                               exit={{ scale: 0, opacity: 0 }}
+//                               
+//                               
+//                               
 //                               transition={{ type: "spring", stiffness: 500, damping: 20 }}
 //                             >
 //                               {inCart}
-//                             </motion.div>
+//                             </div>
 //                           )}
 //                         </AnimatePresence>
-//                       </motion.div>
+//                       </div>
 //                     );
 //                   })}
 //                 </div>
@@ -249,10 +249,10 @@
 
 //         {/* Bottom Cart Bar */}
 //         {totalItems > 0 && (
-//           <motion.div
+//           <div
 //             className="fixed bottom-0 left-0 right-0 bg-white shadow-xl border-t z-50 px-4 py-3 flex justify-between items-center md:px-6"
-//             initial={{ y: 100 }}
-//             animate={{ y: 0 }}
+//             
+//             
 //             transition={{ type: "spring", stiffness: 200 }}
 //           >
 //             <div className="flex flex-col md:flex-row gap-2 md:gap-4 font-semibold text-gray-800">
@@ -274,7 +274,7 @@
 //             >
 //               ✅ Generate Payment Slip
 //             </button>
-//           </motion.div>
+//           </div>
 //         )}
 //       </div>
 //     </div>
@@ -340,7 +340,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap, Printer, File, Heart } from "lucide-react";
+import { Plus, Search, ChevronDown, Trash2, Pencil, RotateCcw, Check, X, Sparkles, Image as ImageIcon, Loader2, Globe, Zap, Printer, File, Heart, Copy, GripVertical, IndianRupee, Layers, LayoutGrid, ListFilter, Edit2, MonitorSmartphone } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter, useSearchParams } from "next/navigation";
 import ItemModal from "@/components/MenuEditor/ItemModal";
 import { useConfirm } from "@/components/ConfirmContext";
@@ -456,6 +457,7 @@ export default function ViewMenuPage() {
 
   // filters & UI
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 300);
   const [filterCategory, setFilterCategory] = useState<string | "all">("all");
   const [filterZone, setFilterZone] = useState<string | "all">("all");
   const [availableZones, setAvailableZones] = useState<string[]>(["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"]);
@@ -1414,10 +1416,10 @@ export default function ViewMenuPage() {
   const flattenedItems = useMemo(() => menus.flatMap((c) => c.items.map((it) => ({ ...it, categoryName: c.name }))), [menus]);
 
   const filteredByQuery = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     if (!q) return flattenedItems;
     return flattenedItems.filter((it) => (it.name?.toLowerCase() ?? "").includes(q) || (it as any).categoryName?.toLowerCase()?.includes(q));
-  }, [flattenedItems, query]);
+  }, [flattenedItems, debouncedQuery]);
 
   const filteredByCategory = useMemo(() => {
     if (filterCategory === "all") return filteredByQuery;
@@ -1476,7 +1478,7 @@ export default function ViewMenuPage() {
     }
 
     const list: MenuCategory[] = [];
-    const hasActiveFilter = filterZone !== "all" || query.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
+    const hasActiveFilter = filterZone !== "all" || debouncedQuery.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
     
     for (const m of menus) {
       if (m.id === "favorites_virtual") continue;
@@ -1488,8 +1490,8 @@ export default function ViewMenuPage() {
         isCatInZone = (m.zones || []).some((z: string) => z.toUpperCase() === targetZone);
       }
 
-      if (query.trim() !== "") {
-        if (got.items.length > 0 || m.name.toLowerCase().includes(query.trim().toLowerCase())) {
+      if (debouncedQuery.trim() !== "") {
+        if (got.items.length > 0 || m.name.toLowerCase().includes(debouncedQuery.trim().toLowerCase())) {
           list.push(got);
         }
       } else if (filterZone !== "all") {
@@ -1523,8 +1525,8 @@ export default function ViewMenuPage() {
         }
         
         // Search filter
-        if (query.trim()) {
-           const q = query.trim().toLowerCase();
+        if (debouncedQuery.trim()) {
+           const q = debouncedQuery.trim().toLowerCase();
            match = match && ((it.name?.toLowerCase() ?? "").includes(q) || m.name.toLowerCase().includes(q));
         }
         
@@ -1541,7 +1543,7 @@ export default function ViewMenuPage() {
       
       return { ...m, items: filteredItems };
     }).filter(m => {
-      const hasActiveFilter = filterZone !== "all" || query.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
+      const hasActiveFilter = filterZone !== "all" || debouncedQuery.trim() !== "" || filterHasImage !== "all" || priceMin !== "" || priceMax !== "";
       if (!hasActiveFilter) return true;
       
       if (filterZone !== "all") {
@@ -1550,8 +1552,8 @@ export default function ViewMenuPage() {
         if (isCatInZone) return true; // Explicitly in zone, show regardless of items
       }
 
-      if (query.trim() && m.name.toLowerCase().includes(query.trim().toLowerCase())) return true;
-      if (query.trim() !== "" && m.items.length === 0) return false;
+      if (debouncedQuery.trim() && m.name.toLowerCase().includes(debouncedQuery.trim().toLowerCase())) return true;
+      if (debouncedQuery.trim() !== "" && m.items.length === 0) return false;
       return true; // Always return true for empty categories unless explicitly filtered out by search text
     });
   }, [menus, filterZone, query, filterHasImage, priceMin, priceMax]);
@@ -2448,7 +2450,7 @@ export default function ViewMenuPage() {
                     {cat.items.map((item) => {
                       const inCart = cart[item.id]?.quantity ?? 0;
                       return (
-                        <motion.div key={item.id} layout whileHover={{ scale: 1.03, y: -4 }} className="bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all hover:border-indigo-400/50">
+                        <div key={item.id}   className="bg-[var(--kravy-surface)] p-4 rounded-2xl border border-[var(--kravy-border)] shadow-sm relative cursor-pointer min-w-0 transition-all hover:border-indigo-400/50">
 
                           <div
                             onDragOver={(e) => handleDragOver(e, item.id)}
@@ -2643,13 +2645,13 @@ export default function ViewMenuPage() {
                             )}
                             {item.unit && <div className="text-[0.65rem] font-bold text-[var(--kravy-text-muted)] uppercase tracking-tighter opacity-70">{item.unit}</div>}
                           </div>
-                        </motion.div>
+                        </div>
                       );
                     })}
 
                     {/* Quick Add Item Card */}
-                    <motion.div
-                      whileHover={{ scale: 1.03, y: -4 }}
+                    <div
+                      
                       onClick={() => setQuickAddCat({ id: cat.id, name: cat.name })}
                       className="bg-indigo-50/50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-indigo-100/50 hover:border-indigo-300 transition-all min-h-[220px]"
                     >
@@ -2660,7 +2662,7 @@ export default function ViewMenuPage() {
                         <p className="text-sm font-black text-indigo-600 uppercase tracking-widest">Quick Add</p>
                         <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-tight mt-1">Add to {cat.name}</p>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 )}
               </section>
@@ -2674,10 +2676,10 @@ export default function ViewMenuPage() {
       {/* 🚀 BULK ACTIONS FLOATING BAR */}
       <AnimatePresence>
         {selectedIds.size > 0 && (
-          <motion.div 
-            initial={{ y: 100, opacity: 0 }} 
-            animate={{ y: 0, opacity: 1 }} 
-            exit={{ y: 100, opacity: 0 }}
+          <div 
+             
+             
+            
             className="fixed left-4 right-4 bottom-10 z-[60] bg-indigo-950 text-white p-5 rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(30,27,75,0.6)] flex flex-col md:flex-row items-center justify-between gap-6 max-w-5xl mx-auto border border-white/20 backdrop-blur-2xl ring-1 ring-white/10"
           >
             <div className="flex items-center gap-5">
@@ -2858,7 +2860,7 @@ export default function ViewMenuPage() {
                 <X size={20} />
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -2887,7 +2889,7 @@ export default function ViewMenuPage() {
       {showDeleteAllConfirm && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowDeleteAllConfirm(false)} />
-          <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-sm p-8 z-[10001] text-center">
+          <div   className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-sm p-8 z-[10001] text-center">
             <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-600">
                <Trash2 size={32} />
             </div>
@@ -2921,7 +2923,7 @@ export default function ViewMenuPage() {
                 {wipeZone === "All" ? "Yes, Delete All" : "Clear Zone"}
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
 
@@ -3037,10 +3039,10 @@ export default function ViewMenuPage() {
       )}
 
       {toast && (
-        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed right-8 bottom-32 bg-[var(--kravy-surface)] border border-indigo-500 shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[100] font-bold flex items-center gap-3 px-6 py-4 rounded-2xl ring-1 ring-white/10">
+        <div   className="fixed right-8 bottom-32 bg-[var(--kravy-surface)] border border-indigo-500 shadow-[0_20px_50px_rgba(0,0,0,0.3)] z-[100] font-bold flex items-center gap-3 px-6 py-4 rounded-2xl ring-1 ring-white/10">
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 text-sm">✓</div>
           <span className="text-[var(--kravy-text-primary)]">{toast}</span>
-        </motion.div>
+        </div>
       )}
 
       {/* 🚀 RENAME CATEGORY MODAL */}
@@ -3142,17 +3144,17 @@ export default function ViewMenuPage() {
       {/* 🚀 ADMIN IMAGE SEARCH SIDE PANEL */}
       <AnimatePresence>
         {imageSearchItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
+            
+            
+            
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex justify-end"
             onClick={() => setImageSearchItem(null)}
           >
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
+            <div
+              
+              
+              
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="w-full max-w-md bg-[var(--kravy-surface)] border-l border-[var(--kravy-border)] h-full shadow-2xl flex flex-col p-8 overflow-hidden z-[10001]"
               onClick={(e) => e.stopPropagation()}
@@ -3256,8 +3258,8 @@ export default function ViewMenuPage() {
                   </div>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -3711,7 +3713,7 @@ function EditModal({
     return createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-lg p-0 z-[10000] overflow-hidden">
+        <div   className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-lg p-0 z-[10000] overflow-hidden">
 
           <div className="p-8 pb-4">
             <h3 className="text-2xl font-black text-[var(--kravy-text-primary)] mb-6 flex items-center gap-3">
@@ -4209,7 +4211,7 @@ function EditModal({
               Save Changes
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>, document.body
     );
 }
@@ -4222,7 +4224,7 @@ function ConfirmDelete({ item, onClose, onConfirm }: { item: MenuItem; onClose: 
     return createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
-        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-sm p-8 z-[10000] text-center">
+        <div   className="relative bg-[var(--kravy-surface)] rounded-[32px] border border-[var(--kravy-border)] shadow-2xl w-full max-w-sm p-8 z-[10000] text-center">
           <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <span className="text-3xl">⚠️</span>
           </div>
@@ -4234,7 +4236,7 @@ function ConfirmDelete({ item, onClose, onConfirm }: { item: MenuItem; onClose: 
             <button onClick={onClose} className="px-6 py-4 font-black text-[var(--kravy-text-muted)] rounded-2xl hover:bg-[var(--kravy-surface-hover)] transition-all">Cancel</button>
             <button onClick={() => onConfirm()} className="px-6 py-4 font-black rounded-2xl bg-rose-600 hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20 text-white active:scale-95">Delete</button>
           </div>
-        </motion.div>
+        </div>
       </div>, document.body
     );
 }

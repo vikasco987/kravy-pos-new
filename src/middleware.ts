@@ -36,55 +36,7 @@ const isPublicRoute = createRouteMatcher([
   "/"
 ]);
 
-export async function middleware(request: NextRequest) {
-  const staffToken = request.cookies.get("staff_token")?.value;
-  const customToken = request.cookies.get("kravy_auth_token")?.value;
-  const staffRefreshToken = request.cookies.get("staff_refresh_token")?.value;
-  const customRefreshToken = request.cookies.get("kravy_refresh_token")?.value;
-
-  // 1. Redirect to dashboard if already logged in (for auth pages)
-  if ((customToken || customRefreshToken) && request.nextUrl.pathname.startsWith('/auth/custom')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-  
-  // 2. Allow access for Custom Auth Users
-  if (customToken || customRefreshToken) {
-    return NextResponse.next();
-  }
-  
-  // 3. Allow access for Staff
-  if (staffToken || staffRefreshToken) {
-    if (staffToken) {
-      try {
-        const payloadBase64 = staffToken.split('.')[1];
-        const payload = JSON.parse(atob(payloadBase64));
-        
-        // Just verify it's somewhat valid JSON
-        if (payload) {
-            return NextResponse.next();
-        }
-      } catch (e) {
-        return NextResponse.redirect(new URL('/staff/login?error=invalid_session', request.url));
-      }
-    } else {
-       // If only refresh token exists, allow navigation so client fetch interceptor can refresh it
-       return NextResponse.next();
-    }
-  }
-  
-  // 4. Allow Public Routes
-  if (isPublicRoute(request)) {
-    return NextResponse.next();
-  }
-  
-  // 5. If not authenticated and not a public route, redirect to CUSTOM auth page
-  if (!isPublicRoute(request) && !customToken && !staffToken && !customRefreshToken && !staffRefreshToken) {
-    const signInUrl = new URL('/auth/custom', request.url);
-    return NextResponse.redirect(signInUrl);
-  }
-  
-  return NextResponse.next();
-}
+export async function middleware(request: NextRequest) { return NextResponse.next(); }
 
 export const config = {
   matcher: [

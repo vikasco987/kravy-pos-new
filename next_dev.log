@@ -1,0 +1,3880 @@
+
+> kravy-pos@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.3.8
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.31.91:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2s
+ ✓ Compiled /middleware in 180ms (151 modules)
+ ○ Compiling /dashboard/menu/view ...
+ ✓ Compiled /dashboard/menu/view in 3.3s (1907 modules)
+ GET /dashboard/menu/view 200 in 3672ms
+ ○ Compiling /api/notifications ...
+ ✓ Compiled /api/notifications in 1996ms (1999 modules)
+ GET /dashboard/menu/view 200 in 63ms
+ GET /api/user/me 200 in 2703ms
+ GET /api/notifications 200 in 2478ms
+ GET /api/user/me 200 in 233ms
+ ○ Compiling /api/categories ...
+ ✓ Compiled /api/categories in 719ms (2014 modules)
+ GET /api/menu-editor/addon-groups 200 in 1032ms
+ GET /api/categories?t=1789324306209 200 in 779ms
+ GET /api/profile 200 in 1224ms
+ GET /api/profile 200 in 1224ms
+ GET /api/user/me 200 in 1258ms
+ GET /api/notifications 200 in 1266ms
+ ✓ Compiled /api/profile/zones in 444ms (2016 modules)
+ GET /api/profile/zones 200 in 801ms
+ GET /api/user/me 200 in 569ms
+ GET /api/user/me 200 in 501ms
+ GET /api/notifications 200 in 533ms
+ GET /api/profile 200 in 826ms
+ GET /api/profile 200 in 555ms
+ GET /api/menu-editor/addon-groups 200 in 143ms
+ GET /api/categories?t=1789324306213 200 in 153ms
+ GET /api/profile 200 in 205ms
+ GET /api/profile/zones 200 in 160ms
+ GET /dashboard/menu/view 200 in 173ms
+ GET /api/user/me 200 in 176ms
+ GET /api/menu-editor/addon-groups 200 in 135ms
+ GET /api/user/me 200 in 182ms
+ GET /api/notifications 200 in 184ms
+ GET /api/user/me 200 in 184ms
+ GET /api/profile 200 in 228ms
+ GET /api/profile 200 in 229ms
+ GET /api/categories?t=1789324311673 200 in 104ms
+ GET /api/profile/zones 200 in 149ms
+ GET /api/notifications 200 in 164ms
+ GET /api/profile 200 in 206ms
+ GET /api/user/me 200 in 163ms
+ GET /api/profile 200 in 213ms
+ GET /api/categories?t=1789324311677 200 in 133ms
+ GET /api/menu-editor/addon-groups 200 in 134ms
+ GET /api/profile 200 in 196ms
+ GET /api/profile/zones 200 in 136ms
+ GET /api/user/me 200 in 426ms
+ GET /dashboard/menu/view 200 in 48ms
+ GET /api/user/me 200 in 169ms
+ GET /api/menu-editor/addon-groups 200 in 144ms
+ GET /api/user/me 200 in 166ms
+ GET /api/notifications 200 in 192ms
+ GET /api/user/me 200 in 211ms
+ GET /api/profile 200 in 236ms
+ GET /api/profile 200 in 237ms
+ GET /api/categories?t=1789324315494 200 in 111ms
+ GET /api/profile/zones 200 in 148ms
+ GET /api/user/me 200 in 151ms
+ GET /api/profile 200 in 186ms
+ GET /api/notifications 200 in 161ms
+ GET /api/user/me 200 in 149ms
+ GET /api/profile 200 in 218ms
+ GET /api/menu-editor/addon-groups 200 in 105ms
+ GET /api/categories?t=1789324315497 200 in 99ms
+ GET /api/profile 200 in 196ms
+ GET /api/profile/zones 200 in 151ms
+ GET /dashboard/menu/view 200 in 52ms
+ GET /api/user/me 200 in 165ms
+ GET /api/menu-editor/addon-groups 200 in 139ms
+ GET /api/user/me 200 in 156ms
+ GET /api/user/me 200 in 196ms
+ GET /api/notifications 200 in 199ms
+ GET /api/profile 200 in 212ms
+ GET /api/profile 200 in 229ms
+ GET /api/categories?t=1789324319266 200 in 103ms
+ GET /api/profile/zones 200 in 128ms
+ GET /api/user/me 200 in 160ms
+ GET /api/profile 200 in 185ms
+ GET /api/notifications 200 in 159ms
+ GET /api/user/me 200 in 147ms
+ GET /api/profile 200 in 194ms
+ GET /api/menu-editor/addon-groups 200 in 103ms
+ GET /api/profile 200 in 186ms
+ GET /api/categories?t=1789324319269 200 in 104ms
+ GET /api/profile/zones 200 in 133ms
+ GET /api/notifications 200 in 173ms
+ GET /api/notifications 200 in 150ms
+ ○ Compiling /api/profiles ...
+ ✓ Compiled /api/profiles in 819ms (2023 modules)
+ GET /api/tables 200 in 983ms
+ GET /api/notifications 200 in 798ms
+ GET /api/profiles 200 in 1108ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 1237ms
+ GET /dashboard/menu/view 200 in 182ms
+ GET /api/user/me 200 in 168ms
+ GET /api/profile 200 in 129ms
+ GET /api/profile 200 in 130ms
+ GET /api/user/me 200 in 130ms
+ GET /api/user/me 200 in 130ms
+ GET /api/notifications 200 in 130ms
+ GET /api/menu-editor/addon-groups 200 in 130ms
+ ✓ Compiled in 802ms (874 modules)
+ GET /api/notifications 200 in 229ms
+ GET /dashboard/menu/view 200 in 55ms
+ GET /api/user/me 200 in 161ms
+ GET /api/menu-editor/addon-groups 200 in 171ms
+ GET /api/user/me 200 in 173ms
+ GET /api/notifications 200 in 211ms
+ GET /api/user/me 200 in 215ms
+ GET /api/profile 200 in 243ms
+ GET /api/profile 200 in 244ms
+ GET /api/categories?t=1789324382992 200 in 111ms
+ GET /api/profile/zones 200 in 150ms
+ GET /api/user/me 200 in 153ms
+ GET /api/profile 200 in 191ms
+ GET /api/notifications 200 in 173ms
+ GET /api/user/me 200 in 156ms
+ GET /api/profile 200 in 201ms
+ GET /api/menu-editor/addon-groups 200 in 100ms
+ GET /api/categories?t=1789324382995 200 in 98ms
+ GET /api/profile 200 in 180ms
+ GET /api/profile/zones 200 in 138ms
+ GET /api/notifications 200 in 167ms
+ GET /api/notifications 200 in 170ms
+ GET /api/tables 200 in 128ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 146ms
+ GET /api/profiles 200 in 225ms
+ GET /api/notifications 200 in 213ms
+ GET /dashboard/menu/view 200 in 54ms
+ GET /api/user/me 200 in 169ms
+ GET /api/menu-editor/addon-groups 200 in 142ms
+ GET /api/user/me 200 in 183ms
+ GET /api/user/me 200 in 192ms
+ GET /api/notifications 200 in 193ms
+ GET /api/profile 200 in 241ms
+ GET /api/profile 200 in 258ms
+ GET /api/categories?t=1789324415558 200 in 111ms
+ GET /api/profile/zones 200 in 131ms
+ GET /api/user/me 200 in 173ms
+ GET /api/notifications 200 in 153ms
+ GET /api/profile 200 in 197ms
+ GET /api/user/me 200 in 177ms
+ GET /api/profile 200 in 197ms
+ GET /api/menu-editor/addon-groups 200 in 105ms
+ GET /api/categories?t=1789324415561 200 in 116ms
+ GET /api/profile 200 in 210ms
+ GET /api/profile/zones 200 in 149ms
+ GET /api/notifications 200 in 218ms
+ GET /api/notifications 200 in 152ms
+ GET /api/notifications 200 in 167ms
+ GET /api/tables 200 in 160ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 161ms
+ GET /api/profiles 200 in 484ms
+ GET /api/notifications 200 in 664ms
+ GET /dashboard/menu/view 200 in 104ms
+ GET /api/user/me 200 in 429ms
+ GET /api/user/me 200 in 219ms
+ GET /api/profile 200 in 261ms
+ GET /api/menu-editor/addon-groups 200 in 390ms
+ GET /api/user/me 200 in 414ms
+ GET /api/profile 200 in 511ms
+ GET /api/categories?t=1789324448483 200 in 348ms
+ GET /api/profile/zones 200 in 380ms
+ GET /api/user/me 200 in 169ms
+ GET /api/notifications 200 in 428ms
+ GET /api/profile 200 in 451ms
+ GET /api/categories?t=1789324448486 200 in 101ms
+ GET /api/profile 200 in 422ms
+ GET /api/profile/zones 200 in 129ms
+ GET /api/menu-editor/addon-groups 200 in 350ms
+ GET /api/profile 200 in 913ms
+ GET /api/user/me 200 in 910ms
+ GET /api/notifications 200 in 2223ms
+ GET /api/notifications 200 in 686ms
+ GET /api/notifications 200 in 642ms
+ GET /api/tables 200 in 105ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 130ms
+ GET /api/profiles 200 in 200ms
+ GET /api/notifications 200 in 407ms
+ GET /dashboard/menu/view 200 in 49ms
+ GET /api/user/me 200 in 157ms
+ GET /api/menu-editor/addon-groups 200 in 135ms
+ GET /api/user/me 200 in 160ms
+ GET /api/notifications 200 in 199ms
+ GET /api/user/me 200 in 192ms
+ GET /api/profile 200 in 210ms
+ GET /api/profile 200 in 230ms
+ GET /api/categories?t=1789324480759 200 in 111ms
+ GET /api/profile/zones 200 in 137ms
+ GET /api/profile 200 in 194ms
+ GET /api/user/me 200 in 162ms
+ GET /api/user/me 200 in 885ms
+ GET /api/notifications 200 in 854ms
+ GET /api/profile 200 in 896ms
+ GET /api/profile 200 in 1180ms
+ ✓ Compiled in 1152ms (874 modules)
+ GET /dashboard/menu/view 200 in 31ms
+ GET /api/profile/zones 200 in 681ms
+ GET /api/categories?t=1789324480762 200 in 1416ms
+ GET /api/notifications 200 in 2354ms
+ GET /api/menu-editor/addon-groups 200 in 4444ms
+ GET /api/notifications 200 in 165ms
+ GET /api/notifications 200 in 169ms
+ GET /dashboard/menu/view 200 in 72ms
+ GET /api/user/me 200 in 1211ms
+ GET /api/menu-editor/addon-groups 200 in 157ms
+ GET /api/notifications 200 in 198ms
+ GET /api/user/me 200 in 210ms
+ GET /api/user/me 200 in 208ms
+ GET /api/profile 200 in 247ms
+ GET /api/profile 200 in 249ms
+ GET /api/categories?t=1789324505595 200 in 104ms
+ GET /api/profile/zones 200 in 149ms
+ GET /api/user/me 200 in 156ms
+ GET /api/profile 200 in 198ms
+ GET /api/notifications 200 in 188ms
+ GET /api/user/me 200 in 164ms
+ GET /api/profile 200 in 212ms
+ GET /api/menu-editor/addon-groups 200 in 113ms
+ GET /api/categories?t=1789324505598 200 in 140ms
+ GET /api/profile 200 in 201ms
+ GET /api/profile/zones 200 in 132ms
+ GET /api/tables 200 in 128ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 134ms
+ GET /api/profiles 200 in 195ms
+ GET /api/notifications 200 in 152ms
+ GET /api/notifications 200 in 163ms
+ GET /api/notifications 200 in 172ms
+ GET /api/notifications 200 in 1175ms
+ GET /api/notifications 200 in 160ms
+ GET /api/tables 200 in 128ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 151ms
+ GET /api/profiles 200 in 231ms
+ GET /api/notifications 200 in 154ms
+ GET /api/notifications 200 in 165ms
+ GET /dashboard/menu/view 200 in 64ms
+ GET /api/user/me 200 in 163ms
+ GET /api/menu-editor/addon-groups 200 in 394ms
+ GET /api/categories?t=1789324543739 200 in 384ms
+ GET /api/profile 200 in 935ms
+ GET /api/user/me 200 in 1010ms
+ GET /api/notifications 200 in 1228ms
+ GET /api/user/me 200 in 1162ms
+ GET /api/profile 200 in 237ms
+ GET /api/profile/zones 200 in 423ms
+ GET /api/user/me 200 in 220ms
+ GET /api/notifications 200 in 210ms
+ GET /api/menu-editor/addon-groups 200 in 360ms
+ GET /api/profile 200 in 565ms
+ GET /api/profile 200 in 498ms
+ GET /api/user/me 200 in 758ms
+ GET /api/categories?t=1789324543742 200 in 405ms
+ GET /api/profile/zones 200 in 687ms
+ GET /api/profile 200 in 2623ms
+ GET /api/notifications 200 in 4740ms
+ GET /api/notifications 200 in 143ms
+ GET /api/notifications 200 in 151ms
+ GET /api/tables 200 in 122ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 423ms
+ GET /api/notifications 200 in 411ms
+ ✓ Compiled in 910ms (874 modules)
+ GET /api/profiles 200 in 4216ms
+ GET /dashboard/menu/view 200 in 36ms
+ GET /api/notifications 200 in 164ms
+ GET /api/notifications 200 in 169ms
+ GET /dashboard/menu/view 200 in 85ms
+ GET /api/user/me 200 in 182ms
+ GET /api/user/me 200 in 225ms
+ GET /api/menu-editor/addon-groups 200 in 229ms
+ GET /api/notifications 200 in 250ms
+ GET /api/user/me 200 in 237ms
+ GET /api/profile 200 in 307ms
+ GET /api/profile 200 in 295ms
+ GET /api/categories?t=1789324598670 200 in 147ms
+ GET /api/profile/zones 200 in 177ms
+ GET /api/user/me 200 in 193ms
+ GET /api/profile 200 in 215ms
+ GET /api/notifications 200 in 181ms
+ GET /api/profile 200 in 214ms
+ GET /api/user/me 200 in 232ms
+ GET /api/profile 200 in 254ms
+ GET /api/menu-editor/addon-groups 200 in 323ms
+ GET /api/categories?t=1789324598673 200 in 219ms
+ GET /api/profile/zones 200 in 247ms
+ GET /dashboard/menu/view 200 in 52ms
+ GET /api/user/me 200 in 166ms
+ GET /api/menu-editor/addon-groups 200 in 155ms
+ GET /api/profile 200 in 214ms
+ GET /api/notifications 200 in 215ms
+ GET /api/user/me 200 in 217ms
+ GET /api/user/me 200 in 221ms
+ GET /api/profile 200 in 237ms
+ GET /api/categories?t=1789324601936 200 in 104ms
+ GET /api/profile/zones 200 in 179ms
+ GET /api/notifications 200 in 180ms
+ GET /api/user/me 200 in 202ms
+ GET /api/profile 200 in 228ms
+ GET /api/user/me 200 in 165ms
+ GET /api/profile 200 in 216ms
+ GET /api/menu-editor/addon-groups 200 in 160ms
+ GET /api/categories?t=1789324601939 200 in 162ms
+ GET /api/profile 200 in 225ms
+ GET /api/profile/zones 200 in 183ms
+ GET /api/notifications 200 in 165ms
+ GET /api/notifications 200 in 306ms
+ GET /dashboard/menu/view 200 in 53ms
+ GET /api/user/me 200 in 162ms
+ GET /api/menu-editor/addon-groups 200 in 145ms
+ GET /api/user/me 200 in 183ms
+ GET /api/notifications 200 in 209ms
+ GET /api/user/me 200 in 210ms
+ GET /api/profile 200 in 237ms
+ GET /api/profile 200 in 233ms
+ GET /api/categories?t=1789324605066 200 in 99ms
+ GET /api/profile/zones 200 in 140ms
+ GET /api/user/me 200 in 169ms
+ GET /api/profile 200 in 185ms
+ GET /api/notifications 200 in 170ms
+ GET /api/user/me 200 in 150ms
+ GET /api/profile 200 in 219ms
+ GET /api/menu-editor/addon-groups 200 in 109ms
+ GET /api/profile 200 in 181ms
+ GET /api/categories?t=1789324605069 200 in 127ms
+ GET /api/profile/zones 200 in 139ms
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 163ms
+ GET /api/menu-editor/addon-groups 200 in 293ms
+ GET /api/notifications 200 in 347ms
+ GET /api/user/me 200 in 353ms
+ GET /api/profile 200 in 380ms
+ GET /api/profile 200 in 382ms
+ GET /api/categories?t=1789324606490 200 in 111ms
+ GET /api/user/me 200 in 419ms
+ GET /api/profile/zones 200 in 142ms
+ GET /api/profile 200 in 197ms
+ GET /api/user/me 200 in 181ms
+ GET /api/notifications 200 in 183ms
+ GET /api/user/me 200 in 175ms
+ GET /api/profile 200 in 197ms
+ GET /api/menu-editor/addon-groups 200 in 120ms
+ GET /api/profile 200 in 195ms
+ GET /api/categories?t=1789324606493 200 in 132ms
+ GET /api/profile/zones 200 in 163ms
+ GET /dashboard/menu/view 200 in 62ms
+ GET /api/user/me 200 in 169ms
+ GET /api/menu-editor/addon-groups 200 in 168ms
+ GET /api/user/me 200 in 200ms
+ GET /api/user/me 200 in 224ms
+ GET /api/notifications 200 in 226ms
+ GET /api/profile 200 in 244ms
+ GET /api/profile 200 in 248ms
+ GET /api/categories?t=1789324608227 200 in 110ms
+ GET /api/profile/zones 200 in 133ms
+ GET /api/user/me 200 in 161ms
+ GET /api/profile 200 in 196ms
+ GET /api/notifications 200 in 175ms
+ GET /api/user/me 200 in 153ms
+ GET /api/profile 200 in 223ms
+ GET /api/menu-editor/addon-groups 200 in 104ms
+ GET /api/profile 200 in 200ms
+ GET /api/categories?t=1789324608230 200 in 117ms
+ GET /api/profile/zones 200 in 157ms
+ GET /api/notifications 200 in 408ms
+ GET /api/notifications 200 in 154ms
+ GET /api/notifications 200 in 160ms
+ GET /api/notifications 200 in 360ms
+ GET /api/tables 200 in 264ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 286ms
+ GET /api/notifications 200 in 151ms
+ GET /api/profiles 200 in 370ms
+ GET /api/tables 200 in 126ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 136ms
+ GET /api/profiles 200 in 209ms
+ GET /api/notifications 200 in 154ms
+ GET /dashboard/menu/view 200 in 54ms
+ GET /api/user/me 200 in 157ms
+ GET /api/menu-editor/addon-groups 200 in 151ms
+ GET /api/user/me 200 in 169ms
+ GET /api/notifications 200 in 212ms
+ GET /api/user/me 200 in 213ms
+ GET /api/profile 200 in 322ms
+ GET /api/profile 200 in 332ms
+ GET /api/categories?t=1789324641833 200 in 197ms
+ GET /api/profile/zones 200 in 305ms
+ GET /api/user/me 200 in 467ms
+ GET /api/profile 200 in 478ms
+ GET /api/notifications 200 in 414ms
+ GET /api/user/me 200 in 368ms
+ GET /api/profile 200 in 433ms
+ GET /api/profile 200 in 303ms
+ GET /api/menu-editor/addon-groups 200 in 123ms
+ GET /api/categories?t=1789324641837 200 in 117ms
+ GET /api/profile/zones 200 in 173ms
+ GET /api/notifications 200 in 147ms
+ GET /api/notifications 200 in 165ms
+ GET /api/notifications 200 in 156ms
+ GET /api/notifications 200 in 146ms
+ GET /api/notifications 200 in 271ms
+ GET /api/notifications 200 in 153ms
+ GET /dashboard/menu/view 200 in 74ms
+ GET /api/user/me 200 in 593ms
+ GET /api/menu-editor/addon-groups 200 in 141ms
+ GET /api/user/me 200 in 181ms
+ GET /api/notifications 200 in 198ms
+ GET /api/user/me 200 in 198ms
+ GET /api/profile 200 in 227ms
+ GET /api/profile 200 in 223ms
+ GET /api/categories?t=1789324669790 200 in 103ms
+ GET /api/profile/zones 200 in 135ms
+ GET /api/user/me 200 in 157ms
+ GET /api/profile 200 in 188ms
+ GET /api/notifications 200 in 164ms
+ GET /api/user/me 200 in 148ms
+ GET /api/profile 200 in 199ms
+ GET /api/menu-editor/addon-groups 200 in 100ms
+ GET /api/profile 200 in 182ms
+ GET /api/categories?t=1789324669793 200 in 112ms
+ GET /api/profile/zones 200 in 143ms
+ GET /api/tables 200 in 118ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 128ms
+ GET /api/profiles 200 in 197ms
+ GET /api/notifications 200 in 39ms
+ ✓ Compiled in 730ms (874 modules)
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 176ms
+ GET /api/user/me 200 in 179ms
+ GET /api/menu-editor/addon-groups 200 in 165ms
+ GET /api/notifications 200 in 215ms
+ GET /api/user/me 200 in 219ms
+ GET /api/profile 200 in 259ms
+ GET /api/profile 200 in 261ms
+ GET /api/categories?t=1789324707535 200 in 119ms
+ GET /api/profile/zones 200 in 167ms
+ GET /api/user/me 200 in 182ms
+ GET /api/profile 200 in 203ms
+ GET /api/notifications 200 in 179ms
+ GET /api/user/me 200 in 149ms
+ GET /api/profile 200 in 205ms
+ GET /api/menu-editor/addon-groups 200 in 125ms
+ GET /api/profile 200 in 195ms
+ GET /api/categories?t=1789324707538 200 in 117ms
+ GET /api/profile/zones 200 in 166ms
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 148ms
+ GET /api/menu-editor/addon-groups 200 in 130ms
+ GET /api/notifications 200 in 169ms
+ GET /api/user/me 200 in 185ms
+ GET /api/user/me 200 in 186ms
+ GET /api/profile 200 in 207ms
+ GET /api/profile 200 in 222ms
+ GET /api/categories?t=1789324710707 200 in 100ms
+ GET /api/profile/zones 200 in 141ms
+ GET /api/user/me 200 in 190ms
+ GET /api/profile 200 in 218ms
+ GET /api/notifications 200 in 234ms
+ GET /api/profile 200 in 228ms
+ GET /api/user/me 200 in 302ms
+ GET /api/menu-editor/addon-groups 200 in 188ms
+ GET /api/categories?t=1789324710710 200 in 192ms
+ GET /api/profile 200 in 235ms
+ GET /api/profile/zones 200 in 188ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 158ms
+ GET /api/menu-editor/addon-groups 200 in 136ms
+ GET /api/user/me 200 in 166ms
+ GET /api/notifications 200 in 184ms
+ GET /api/user/me 200 in 187ms
+ GET /api/profile 200 in 215ms
+ GET /api/profile 200 in 212ms
+ GET /api/categories?t=1789324713833 200 in 103ms
+ GET /api/profile/zones 200 in 147ms
+ GET /api/user/me 200 in 155ms
+ GET /api/notifications 200 in 175ms
+ GET /api/profile 200 in 210ms
+ GET /api/profile 200 in 198ms
+ GET /api/user/me 200 in 165ms
+ GET /api/menu-editor/addon-groups 200 in 104ms
+ GET /api/profile 200 in 200ms
+ GET /api/categories?t=1789324713835 200 in 118ms
+ GET /api/profile/zones 200 in 152ms
+ GET /dashboard/menu/view 200 in 39ms
+ GET /api/user/me 200 in 158ms
+ GET /api/menu-editor/addon-groups 200 in 146ms
+ GET /api/user/me 200 in 162ms
+ GET /api/notifications 200 in 195ms
+ GET /api/user/me 200 in 196ms
+ GET /api/profile 200 in 224ms
+ GET /api/profile 200 in 227ms
+ GET /api/categories?t=1789324716869 200 in 104ms
+ GET /api/profile/zones 200 in 132ms
+ GET /api/user/me 200 in 156ms
+ GET /api/profile 200 in 196ms
+ GET /api/notifications 200 in 165ms
+ GET /api/user/me 200 in 149ms
+ GET /api/profile 200 in 213ms
+ GET /api/menu-editor/addon-groups 200 in 117ms
+ GET /api/profile 200 in 179ms
+ GET /api/categories?t=1789324716872 200 in 119ms
+ GET /api/profile/zones 200 in 162ms
+ GET /dashboard/menu/view 200 in 55ms
+ GET /api/user/me 200 in 897ms
+ GET /api/menu-editor/addon-groups 200 in 137ms
+ GET /api/user/me 200 in 152ms
+ GET /api/notifications 200 in 201ms
+ GET /api/user/me 200 in 203ms
+ GET /api/profile 200 in 220ms
+ GET /api/profile 200 in 223ms
+ GET /api/categories?t=1789324721070 200 in 113ms
+ GET /api/profile/zones 200 in 133ms
+ GET /api/user/me 200 in 187ms
+ GET /api/profile 200 in 197ms
+ GET /api/notifications 200 in 169ms
+ GET /api/user/me 200 in 165ms
+ GET /api/profile 200 in 238ms
+ GET /api/profile 200 in 194ms
+ GET /api/menu-editor/addon-groups 200 in 141ms
+ GET /api/categories?t=1789324721073 200 in 141ms
+ GET /api/profile/zones 200 in 159ms
+ GET /api/notifications 200 in 265ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 155ms
+ GET /api/menu-editor/addon-groups 200 in 141ms
+ GET /api/user/me 200 in 161ms
+ GET /api/notifications 200 in 184ms
+ GET /api/user/me 200 in 192ms
+ GET /api/profile 200 in 219ms
+ GET /api/profile 200 in 220ms
+ GET /api/categories?t=1789324724565 200 in 103ms
+ GET /api/profile/zones 200 in 130ms
+ GET /api/user/me 200 in 158ms
+ GET /api/profile 200 in 283ms
+ GET /api/notifications 200 in 311ms
+ GET /api/profile 200 in 406ms
+ GET /api/user/me 200 in 367ms
+ GET /api/profile 200 in 334ms
+ GET /api/menu-editor/addon-groups 200 in 200ms
+ GET /api/categories?t=1789324724568 200 in 185ms
+ GET /api/profile/zones 200 in 207ms
+ GET /dashboard/menu/view 200 in 42ms
+ GET /api/user/me 200 in 156ms
+ GET /api/menu-editor/addon-groups 200 in 132ms
+ GET /api/notifications 200 in 170ms
+ GET /api/user/me 200 in 175ms
+ GET /api/user/me 200 in 176ms
+ GET /api/profile 200 in 213ms
+ GET /api/profile 200 in 217ms
+ GET /api/categories?t=1789324728036 200 in 106ms
+ GET /api/profile/zones 200 in 130ms
+ GET /api/user/me 200 in 154ms
+ GET /api/notifications 200 in 152ms
+ GET /api/profile 200 in 186ms
+ GET /api/user/me 200 in 151ms
+ GET /api/profile 200 in 189ms
+ GET /api/menu-editor/addon-groups 200 in 99ms
+ GET /api/profile 200 in 176ms
+ GET /api/categories?t=1789324728039 200 in 112ms
+ GET /api/profile/zones 200 in 149ms
+ GET /dashboard/menu/view 200 in 42ms
+ GET /api/user/me 200 in 153ms
+ GET /api/menu-editor/addon-groups 200 in 136ms
+ GET /api/user/me 200 in 174ms
+ GET /api/notifications 200 in 186ms
+ GET /api/user/me 200 in 184ms
+ GET /api/profile 200 in 219ms
+ GET /api/profile 200 in 216ms
+ GET /api/categories?t=1789324731603 200 in 96ms
+ GET /api/profile/zones 200 in 134ms
+ GET /api/user/me 200 in 157ms
+ GET /api/profile 200 in 182ms
+ GET /api/notifications 200 in 161ms
+ GET /api/user/me 200 in 151ms
+ GET /api/profile 200 in 205ms
+ GET /api/profile 200 in 193ms
+ GET /api/menu-editor/addon-groups 200 in 154ms
+ GET /api/categories?t=1789324731606 200 in 125ms
+ GET /api/profile/zones 200 in 148ms
+ GET /dashboard/menu/view 200 in 40ms
+ GET /api/user/me 200 in 154ms
+ GET /api/menu-editor/addon-groups 200 in 154ms
+ GET /api/user/me 200 in 191ms
+ GET /api/user/me 200 in 199ms
+ GET /api/notifications 200 in 198ms
+ GET /api/profile 200 in 223ms
+ GET /api/profile 200 in 225ms
+ GET /api/categories?t=1789324735220 200 in 100ms
+ GET /api/profile/zones 200 in 132ms
+ GET /api/user/me 200 in 150ms
+ GET /api/profile 200 in 193ms
+ GET /api/notifications 200 in 150ms
+ GET /api/user/me 200 in 143ms
+ GET /api/profile 200 in 188ms
+ GET /api/menu-editor/addon-groups 200 in 107ms
+ GET /api/profile 200 in 177ms
+ GET /api/categories?t=1789324735223 200 in 118ms
+ GET /api/profile/zones 200 in 154ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 165ms
+ GET /api/menu-editor/addon-groups 200 in 135ms
+ GET /api/notifications 200 in 166ms
+ GET /api/user/me 200 in 188ms
+ GET /api/user/me 200 in 191ms
+ GET /api/profile 200 in 214ms
+ GET /api/profile 200 in 219ms
+ GET /api/categories?t=1789324738998 200 in 101ms
+ GET /api/profile/zones 200 in 127ms
+ GET /api/user/me 200 in 169ms
+ GET /api/profile 200 in 191ms
+ GET /api/notifications 200 in 160ms
+ GET /api/user/me 200 in 160ms
+ GET /api/profile 200 in 197ms
+ GET /api/profile 200 in 187ms
+ GET /api/menu-editor/addon-groups 200 in 110ms
+ GET /api/categories?t=1789324739002 200 in 119ms
+ GET /api/profile/zones 200 in 153ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 2430ms
+ GET /api/notifications 200 in 689ms
+ GET /api/user/me 200 in 698ms
+ GET /api/menu-editor/addon-groups 200 in 695ms
+ GET /api/profile 200 in 728ms
+ GET /api/profile 200 in 724ms
+ GET /api/categories?t=1789324745196 200 in 105ms
+ GET /api/profile/zones 200 in 130ms
+ GET /api/notifications 200 in 153ms
+ GET /api/user/me 200 in 162ms
+ GET /api/profile 200 in 197ms
+ GET /api/user/me 200 in 960ms
+ GET /api/profile 200 in 183ms
+ GET /api/user/me 200 in 146ms
+ GET /api/menu-editor/addon-groups 200 in 111ms
+ GET /api/categories?t=1789324745200 200 in 112ms
+ GET /api/profile 200 in 207ms
+ GET /api/profile/zones 200 in 135ms
+ GET /dashboard/menu/view 200 in 39ms
+ GET /api/user/me 200 in 155ms
+ GET /api/menu-editor/addon-groups 200 in 136ms
+ GET /api/notifications 200 in 167ms
+ GET /api/user/me 200 in 169ms
+ GET /api/user/me 200 in 176ms
+ GET /api/profile 200 in 210ms
+ GET /api/profile 200 in 216ms
+ GET /api/categories?t=1789324749597 200 in 96ms
+ GET /api/profile/zones 200 in 134ms
+ GET /api/user/me 200 in 149ms
+ GET /api/notifications 200 in 146ms
+ GET /api/profile 200 in 184ms
+ GET /api/user/me 200 in 147ms
+ GET /api/profile 200 in 206ms
+ GET /api/menu-editor/addon-groups 200 in 110ms
+ GET /api/categories?t=1789324749600 200 in 114ms
+ GET /api/profile 200 in 180ms
+ GET /api/profile/zones 200 in 145ms
+ GET /api/notifications 200 in 338ms
+ ✓ Compiled in 1083ms (874 modules)
+ GET /api/notifications 200 in 293ms
+ ✓ Compiled in 3.6s (2001 modules)
+ GET /api/notifications 200 in 352ms
+ GET /api/notifications 200 in 650ms
+ GET /api/notifications 200 in 303ms
+ GET /api/notifications 200 in 296ms
+ GET /api/notifications 200 in 266ms
+ GET /api/notifications 200 in 292ms
+ GET /dashboard/menu/view 200 in 210ms
+ ✓ Compiled /api/user/me in 274ms (1140 modules)
+ GET /api/user/me 200 in 487ms
+ ✓ Compiled /api/profile in 121ms (1142 modules)
+ GET /api/user/me 200 in 200ms
+ ✓ Compiled (1144 modules)
+ GET /api/user/me 200 in 530ms
+ GET /api/notifications 200 in 531ms
+ GET /api/profile 200 in 901ms
+ GET /api/menu-editor/addon-groups 200 in 902ms
+ GET /api/profile 200 in 902ms
+ ○ Compiling /api/profile/zones ...
+ ✓ Compiled /api/profile/zones in 1034ms (1155 modules)
+ ✓ Compiled (1157 modules)
+ GET /api/profile/zones 200 in 410ms
+ GET /api/categories?t=1789325237237 200 in 678ms
+ GET /api/notifications 200 in 865ms
+ GET /dashboard/menu/view 200 in 243ms
+ GET /api/user/me 200 in 147ms
+ GET /api/notifications 200 in 310ms
+ GET /api/menu-editor/addon-groups 200 in 304ms
+ GET /api/user/me 200 in 372ms
+ GET /api/user/me 200 in 426ms
+ GET /api/categories?t=1789326148190 200 in 115ms
+ GET /api/profile 200 in 516ms
+ GET /api/profile 200 in 523ms
+ GET /api/profile 200 in 173ms
+ GET /api/user/me 200 in 213ms
+ GET /api/notifications 200 in 180ms
+ GET /api/profile/zones 200 in 338ms
+ GET /api/profile 200 in 247ms
+ GET /api/categories?t=1789326148193 200 in 118ms
+ GET /api/menu-editor/addon-groups 200 in 120ms
+ GET /api/user/me 200 in 257ms
+ GET /api/profile/zones 200 in 143ms
+ GET /api/profile 200 in 200ms
+ GET /dashboard/menu/view 200 in 44ms
+ GET /api/user/me 200 in 150ms
+ GET /api/menu-editor/addon-groups 200 in 115ms
+ GET /api/notifications 200 in 158ms
+ GET /api/user/me 200 in 187ms
+ GET /api/user/me 200 in 192ms
+ GET /api/profile 200 in 195ms
+ GET /api/profile 200 in 206ms
+ GET /api/categories?t=1789326151498 200 in 112ms
+ GET /api/profile/zones 200 in 135ms
+ GET /api/user/me 200 in 169ms
+ GET /api/profile 200 in 183ms
+ GET /api/notifications 200 in 181ms
+ GET /api/user/me 200 in 148ms
+ GET /api/profile 200 in 217ms
+ GET /api/profile 200 in 182ms
+ GET /api/menu-editor/addon-groups 200 in 117ms
+ GET /api/categories?t=1789326151502 200 in 119ms
+ GET /api/profile/zones 200 in 156ms
+ GET /dashboard/menu/view 200 in 77ms
+ GET /api/user/me 200 in 158ms
+ GET /api/user/me 200 in 171ms
+ GET /api/menu-editor/addon-groups 200 in 169ms
+ GET /api/notifications 200 in 232ms
+ GET /api/user/me 200 in 232ms
+ GET /api/profile 200 in 257ms
+ GET /api/profile 200 in 279ms
+ GET /api/categories?t=1789326154807 200 in 110ms
+ GET /api/profile/zones 200 in 141ms
+ GET /api/profile 200 in 194ms
+ GET /api/user/me 200 in 179ms
+ GET /api/notifications 200 in 188ms
+ GET /api/user/me 200 in 258ms
+ GET /api/profile 200 in 275ms
+ GET /api/profile 200 in 277ms
+ GET /api/menu-editor/addon-groups 200 in 239ms
+ GET /api/categories?t=1789326154811 200 in 231ms
+ GET /api/profile/zones 200 in 222ms
+ GET /dashboard/menu/view 200 in 230ms
+ GET /api/user/me 200 in 234ms
+ GET /api/notifications 200 in 831ms
+ GET /api/menu-editor/addon-groups 200 in 835ms
+ GET /api/user/me 200 in 879ms
+ GET /api/user/me 200 in 886ms
+ GET /api/profile 200 in 929ms
+ GET /api/profile 200 in 931ms
+ GET /api/categories?t=1789326160969 200 in 517ms
+ GET /api/profile/zones 200 in 812ms
+ GET /api/profile 200 in 1382ms
+ GET /api/user/me 200 in 1404ms
+ GET /api/notifications 200 in 1234ms
+ GET /api/profile 200 in 1349ms
+ GET /api/user/me 200 in 500ms
+ GET /api/profile 200 in 983ms
+ GET /api/menu-editor/addon-groups 200 in 489ms
+ GET /api/notifications 200 in 1052ms
+ GET /api/profile/zones 200 in 706ms
+ GET /api/categories?t=1789326160977 200 in 753ms
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 154ms
+ GET /api/menu-editor/addon-groups 200 in 128ms
+ GET /api/notifications 200 in 165ms
+ GET /api/user/me 200 in 176ms
+ GET /api/user/me 200 in 178ms
+ GET /api/profile 200 in 199ms
+ GET /api/profile 200 in 206ms
+ GET /api/categories?t=1789326166877 200 in 98ms
+ GET /api/profile/zones 200 in 141ms
+ GET /api/user/me 200 in 146ms
+ GET /api/notifications 200 in 149ms
+ GET /api/profile 200 in 180ms
+ GET /api/user/me 200 in 150ms
+ GET /api/profile 200 in 198ms
+ GET /api/menu-editor/addon-groups 200 in 101ms
+ GET /api/profile 200 in 178ms
+ GET /api/categories?t=1789326166880 200 in 123ms
+ GET /api/profile/zones 200 in 161ms
+ GET /dashboard/menu/view 200 in 46ms
+ GET /api/user/me 200 in 149ms
+ GET /api/menu-editor/addon-groups 200 in 134ms
+ GET /api/user/me 200 in 156ms
+ GET /api/notifications 200 in 186ms
+ GET /api/user/me 200 in 194ms
+ GET /api/profile 200 in 212ms
+ GET /api/profile 200 in 212ms
+ GET /api/categories?t=1789326170722 200 in 94ms
+ GET /api/profile/zones 200 in 121ms
+ GET /api/user/me 200 in 148ms
+ GET /api/notifications 200 in 143ms
+ GET /api/profile 200 in 176ms
+ GET /api/user/me 200 in 149ms
+ GET /api/profile 200 in 192ms
+ GET /api/profile 200 in 172ms
+ GET /api/menu-editor/addon-groups 200 in 102ms
+ GET /api/categories?t=1789326170725 200 in 109ms
+ GET /api/profile/zones 200 in 136ms
+ GET /dashboard/menu/view 200 in 45ms
+ GET /api/user/me 200 in 140ms
+ GET /api/menu-editor/addon-groups 200 in 129ms
+ GET /api/user/me 200 in 144ms
+ GET /api/notifications 200 in 192ms
+ GET /api/user/me 200 in 189ms
+ GET /api/profile 200 in 207ms
+ GET /api/profile 200 in 216ms
+ GET /api/categories?t=1789326175049 200 in 100ms
+ GET /api/profile/zones 200 in 128ms
+ GET /api/user/me 200 in 162ms
+ GET /api/notifications 200 in 142ms
+ GET /api/profile 200 in 180ms
+ GET /api/user/me 200 in 145ms
+ GET /api/profile 200 in 193ms
+ GET /api/profile 200 in 173ms
+ GET /api/menu-editor/addon-groups 200 in 102ms
+ GET /api/categories?t=1789326175052 200 in 111ms
+ GET /api/profile/zones 200 in 143ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 150ms
+ GET /api/menu-editor/addon-groups 200 in 149ms
+ GET /api/user/me 200 in 187ms
+ GET /api/user/me 200 in 190ms
+ GET /api/notifications 200 in 191ms
+ GET /api/profile 200 in 208ms
+ GET /api/profile 200 in 213ms
+ GET /api/categories?t=1789326179351 200 in 99ms
+ GET /api/profile/zones 200 in 147ms
+ GET /api/user/me 200 in 167ms
+ GET /api/notifications 200 in 146ms
+ GET /api/profile 200 in 190ms
+ GET /api/user/me 200 in 149ms
+ GET /api/profile 200 in 187ms
+ GET /api/menu-editor/addon-groups 200 in 102ms
+ GET /api/categories?t=1789326179354 200 in 115ms
+ GET /api/profile 200 in 177ms
+ GET /api/profile/zones 200 in 132ms
+ GET /dashboard/menu/view 200 in 39ms
+ GET /api/user/me 200 in 148ms
+ GET /api/menu-editor/addon-groups 200 in 123ms
+ GET /api/user/me 200 in 152ms
+ GET /api/notifications 200 in 155ms
+ GET /api/user/me 200 in 167ms
+ GET /api/profile 200 in 203ms
+ GET /api/profile 200 in 204ms
+ GET /api/categories?t=1789326183650 200 in 92ms
+ GET /api/profile/zones 200 in 133ms
+ GET /api/user/me 200 in 146ms
+ GET /api/profile 200 in 186ms
+ GET /api/notifications 200 in 159ms
+ GET /api/user/me 200 in 142ms
+ GET /api/profile 200 in 187ms
+ GET /api/menu-editor/addon-groups 200 in 94ms
+ GET /api/categories?t=1789326183653 200 in 97ms
+ GET /api/profile 200 in 172ms
+ GET /api/profile/zones 200 in 128ms
+ GET /dashboard/menu/view 200 in 41ms
+ GET /api/user/me 200 in 243ms
+ GET /api/menu-editor/addon-groups 200 in 274ms
+ GET /api/user/me 200 in 531ms
+ GET /api/notifications 200 in 532ms
+ GET /api/user/me 200 in 533ms
+ GET /api/profile 200 in 534ms
+ GET /api/profile 200 in 535ms
+ GET /api/categories?t=1789326188353 200 in 257ms
+ GET /api/notifications 200 in 494ms
+ GET /api/profile/zones 200 in 496ms
+ GET /api/profile 200 in 644ms
+ GET /api/profile 200 in 645ms
+ GET /api/user/me 200 in 646ms
+ GET /api/user/me 200 in 647ms
+ GET /api/menu-editor/addon-groups 200 in 315ms
+ GET /api/categories?t=1789326188356 200 in 344ms
+ GET /api/profile/zones 200 in 345ms
+ GET /api/profile 200 in 498ms
+ GET /dashboard/menu/view 200 in 38ms
+ GET /api/user/me 200 in 151ms
+ GET /api/menu-editor/addon-groups 200 in 130ms
+ GET /api/notifications 200 in 159ms
+ GET /api/user/me 200 in 160ms
+ GET /api/user/me 200 in 167ms
+ GET /api/profile 200 in 202ms
+ GET /api/profile 200 in 213ms
+ GET /api/categories?t=1789326193343 200 in 99ms
+ GET /api/profile/zones 200 in 126ms
+ GET /api/user/me 200 in 136ms
+ GET /api/profile 200 in 193ms
+ GET /api/notifications 200 in 152ms
+ GET /api/user/me 200 in 158ms
+ GET /api/profile 200 in 182ms
+ GET /api/menu-editor/addon-groups 200 in 105ms
+ GET /api/categories?t=1789326193347 200 in 119ms
+ GET /api/profile 200 in 191ms
+ GET /api/profile/zones 200 in 151ms
+ GET /api/notifications 200 in 395ms
+ GET /api/notifications 200 in 397ms
+ GET /api/notifications 200 in 417ms
+ GET /api/notifications 200 in 411ms
+ GET /api/notifications 200 in 423ms
+ GET /api/notifications 200 in 376ms
+ GET /api/notifications 200 in 379ms
+ GET /api/notifications 200 in 441ms
+ GET /api/notifications 200 in 389ms
+ GET /api/notifications 200 in 417ms
+ GET /api/notifications 200 in 416ms
+ GET /api/notifications 200 in 415ms
+ GET /api/notifications 200 in 461ms
+ GET /api/notifications 200 in 437ms
+ GET /api/notifications 200 in 412ms
+ GET /api/notifications 200 in 904998ms
+ GET /api/notifications 200 in 2512ms
+ GET /api/notifications 200 in 7018ms
+ GET /api/notifications 200 in 56205ms
+ GET /api/notifications 200 in 392ms
+ GET /api/notifications 200 in 456ms
+ GET /api/notifications 200 in 994ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 598.08279ms, Last Update Time: 2026-09-14 5:15:27.735 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"diskState": "READY", "cacheState": "READY", "workloadType": "OPERATIONAL", "availabilityZone": "aps1-az2", "nodeType": "ELECTABLE", "provider": "AWS", "region": "AP_SOUTH_1"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30045ms
+ ○ Compiling /api/auth/refresh-token ...
+ ✓ Compiled /api/auth/refresh-token in 1238ms (2001 modules)
+ POST /api/auth/refresh-token 200 in 7519ms
+ GET /api/notifications 200 in 367ms
+ GET /api/notifications 200 in 375ms
+ GET /api/notifications 200 in 310ms
+ ⨯ ./src/app/dashboard/menu/view/page.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+      ,-[[36;1;4m/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/src/app/dashboard/menu/view/page.tsx[0m:2063:1]
+ [2m2060[0m |   if (error) return <p className="p-6 text-center text-red-600">Error: {error}</p>;
+ [2m2061[0m | 
+ [2m2062[0m |   return (
+ [2m2063[0m |     <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col -m-4 sm:-m-6 lg:-m-8 overflow-hidden transition-colors duration-300">
+      : [35;1m     ^^^[0m
+ [2m2064[0m |       <div className="flex-shrink-0 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-all">
+ [2m2065[0m |         <div className="w-full">
+ [2m2066[0m |           {isAdmin && (
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/dashboard/menu/view/page.tsx
+ ⨯ ./src/app/dashboard/menu/view/page.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+      ,-[[36;1;4m/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/src/app/dashboard/menu/view/page.tsx[0m:2063:1]
+ [2m2060[0m |   if (error) return <p className="p-6 text-center text-red-600">Error: {error}</p>;
+ [2m2061[0m | 
+ [2m2062[0m |   return (
+ [2m2063[0m |     <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col -m-4 sm:-m-6 lg:-m-8 overflow-hidden transition-colors duration-300">
+      : [35;1m     ^^^[0m
+ [2m2064[0m |       <div className="flex-shrink-0 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-all">
+ [2m2065[0m |         <div className="w-full">
+ [2m2066[0m |           {isAdmin && (
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/dashboard/menu/view/page.tsx
+ ○ Compiling /_error ...
+ GET /api/notifications 500 in 1252ms
+ ✓ Compiled /_error in 2.1s (2334 modules)
+ GET /api/notifications 200 in 427ms
+ GET /api/notifications 200 in 904ms
+ ✓ Compiled in 2.1s (2291 modules)
+ GET /api/notifications 200 in 470ms
+ GET /dashboard/menu/view 200 in 187ms
+ ✓ Compiled /api/user/me in 405ms (1185 modules)
+ GET /api/user/me 200 in 730ms
+ ✓ Compiled /api/menu-editor/addon-groups in 122ms (1187 modules)
+ ✓ Compiled (1189 modules)
+ GET /api/menu-editor/addon-groups 200 in 2600ms
+ GET /api/profile 200 in 2634ms
+ ✓ Compiled /api/profile/zones in 129ms (1200 modules)
+ GET /api/user/me 200 in 2763ms
+ GET /api/notifications 200 in 2806ms
+ ✓ Compiled in 0ms (1202 modules)
+ ✓ Compiled in 0ms (1202 modules)
+ GET /api/user/me 200 in 3006ms
+ GET /api/profile 200 in 3097ms
+ ✓ Compiled in 1ms (1202 modules)
+ ✓ Compiled in 0ms (1202 modules)
+ GET /api/categories?t=1789363293201 200 in 754ms
+ ✓ Compiled in 0ms (1202 modules)
+ ✓ Compiled in 0ms (1202 modules)
+ GET /api/profile/zones 200 in 933ms
+ GET /api/profile 200 in 914ms
+ ✓ Compiled in 0ms (1202 modules)
+ GET /api/user/me 200 in 862ms
+ GET /api/notifications 200 in 815ms
+ ✓ Compiled in 0ms (1202 modules)
+ GET /api/profile 200 in 769ms
+ GET /api/user/me 200 in 548ms
+ ✓ Compiled in 0ms (1202 modules)
+ ✓ Compiled in 0ms (1202 modules)
+ ✓ Compiled in 0ms (1202 modules)
+ GET /api/menu-editor/addon-groups 200 in 680ms
+ GET /api/categories?t=1789363293204 200 in 667ms
+ GET /api/profile 200 in 829ms
+ GET /api/profile/zones 200 in 707ms
+ GET /dashboard/menu/view 200 in 160ms
+ GET /api/user/me 200 in 250ms
+ GET /api/menu-editor/addon-groups 200 in 222ms
+ GET /api/notifications 200 in 237ms
+ GET /api/user/me 200 in 297ms
+ GET /api/user/me 200 in 302ms
+ GET /api/profile 200 in 344ms
+ GET /api/categories?t=1789363299591 200 in 174ms
+ GET /api/profile/zones 200 in 189ms
+ GET /api/notifications 200 in 240ms
+ GET /api/profile 200 in 367ms
+ GET /api/profile 200 in 671ms
+ GET /api/user/me 200 in 320ms
+ GET /api/profile 200 in 352ms
+ GET /api/user/me 200 in 556ms
+ GET /api/menu-editor/addon-groups 200 in 197ms
+ GET /api/categories?t=1789363299594 200 in 203ms
+ GET /api/profile 200 in 335ms
+ GET /api/profile/zones 200 in 254ms
+ GET /dashboard/menu/view 200 in 45ms
+ GET /api/user/me 200 in 383ms
+ GET /api/user/me 200 in 383ms
+ GET /api/menu-editor/addon-groups 200 in 394ms
+ GET /api/notifications 200 in 479ms
+ GET /api/user/me 200 in 497ms
+ GET /api/profile 200 in 517ms
+ GET /api/profile 200 in 543ms
+ GET /api/categories?t=1789363303085 200 in 186ms
+ GET /api/profile/zones 200 in 215ms
+ GET /api/notifications 200 in 231ms
+ GET /api/user/me 200 in 258ms
+ GET /api/profile 200 in 293ms
+ GET /api/user/me 200 in 240ms
+ GET /api/profile 200 in 319ms
+ GET /api/profile 200 in 296ms
+ GET /api/menu-editor/addon-groups 200 in 178ms
+ GET /api/categories?t=1789363303088 200 in 169ms
+ GET /api/profile/zones 200 in 191ms
+ GET /dashboard/menu/view 200 in 42ms
+ GET /api/user/me 200 in 253ms
+ GET /api/menu-editor/addon-groups 200 in 231ms
+ GET /api/user/me 200 in 259ms
+ GET /api/notifications 200 in 356ms
+ GET /api/profile 200 in 358ms
+ GET /api/user/me 200 in 360ms
+ GET /api/profile 200 in 363ms
+ GET /api/categories?t=1789363306626 200 in 207ms
+ GET /api/profile/zones 200 in 226ms
+ GET /api/notifications 200 in 296ms
+ GET /api/user/me 200 in 297ms
+ GET /api/profile 200 in 323ms
+ GET /api/profile 200 in 348ms
+ GET /api/user/me 200 in 341ms
+ GET /api/profile 200 in 385ms
+ GET /api/menu-editor/addon-groups 200 in 447ms
+ GET /api/categories?t=1789363306629 200 in 460ms
+ GET /api/profile/zones 200 in 491ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 721ms
+ GET /api/menu-editor/addon-groups 200 in 441ms
+ GET /api/user/me 200 in 551ms
+ GET /api/notifications 200 in 552ms
+ GET /api/user/me 200 in 557ms
+ GET /api/profile 200 in 599ms
+ GET /api/profile 200 in 611ms
+ GET /api/categories?t=1789363310784 200 in 290ms
+ GET /api/profile/zones 200 in 384ms
+ GET /api/user/me 200 in 450ms
+ GET /api/profile 200 in 473ms
+ GET /api/notifications 200 in 452ms
+ GET /api/profile 200 in 500ms
+ GET /api/user/me 200 in 415ms
+ GET /api/menu-editor/addon-groups 200 in 198ms
+ GET /api/categories?t=1789363310787 200 in 190ms
+ GET /api/profile 200 in 312ms
+ GET /api/profile/zones 200 in 222ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 356ms
+ GET /api/menu-editor/addon-groups 200 in 1523ms
+ GET /api/user/me 200 in 1571ms
+ GET /api/user/me 200 in 1598ms
+ GET /api/notifications 200 in 1606ms
+ GET /api/profile 200 in 1608ms
+ GET /api/profile 200 in 1616ms
+ GET /api/categories?t=1789363314809 200 in 151ms
+ GET /api/profile/zones 200 in 200ms
+ GET /api/user/me 200 in 254ms
+ GET /api/profile 200 in 284ms
+ GET /api/notifications 200 in 261ms
+ GET /api/profile 200 in 302ms
+ GET /api/user/me 200 in 269ms
+ GET /api/menu-editor/addon-groups 200 in 173ms
+ GET /api/profile 200 in 290ms
+ GET /api/categories?t=1789363314811 200 in 184ms
+ GET /api/profile/zones 200 in 242ms
+ GET /api/notifications 200 in 452ms
+ GET /dashboard/menu/view 200 in 55ms
+ GET /api/user/me 200 in 244ms
+ GET /api/menu-editor/addon-groups 200 in 213ms
+ GET /api/user/me 200 in 274ms
+ GET /api/user/me 200 in 280ms
+ GET /api/notifications 200 in 288ms
+ GET /api/profile 200 in 324ms
+ GET /api/profile 200 in 332ms
+ GET /api/categories?t=1789363319754 200 in 208ms
+ GET /api/profile/zones 200 in 203ms
+ GET /api/user/me 200 in 269ms
+ GET /api/notifications 200 in 262ms
+ GET /api/profile 200 in 329ms
+ GET /api/profile 200 in 387ms
+ GET /api/menu-editor/addon-groups 200 in 261ms
+ GET /api/user/me 200 in 402ms
+ GET /api/profile 200 in 366ms
+ GET /api/categories?t=1789363319757 200 in 427ms
+ GET /api/profile/zones 200 in 259ms
+ GET /dashboard/menu/view 200 in 42ms
+ GET /api/user/me 200 in 234ms
+ GET /api/menu-editor/addon-groups 200 in 245ms
+ GET /api/user/me 200 in 248ms
+ GET /api/user/me 200 in 285ms
+ GET /api/notifications 200 in 293ms
+ GET /api/profile 200 in 326ms
+ GET /api/profile 200 in 348ms
+ GET /api/categories?t=1789363323561 200 in 188ms
+ GET /api/profile/zones 200 in 237ms
+ GET /api/user/me 200 in 277ms
+ GET /api/profile 200 in 316ms
+ GET /api/notifications 200 in 276ms
+ GET /api/profile 200 in 327ms
+ GET /api/menu-editor/addon-groups 200 in 176ms
+ GET /api/user/me 200 in 316ms
+ GET /api/categories?t=1789363323564 200 in 228ms
+ GET /api/profile 200 in 357ms
+ GET /api/profile/zones 200 in 270ms
+ GET /dashboard/menu/view 200 in 41ms
+ GET /api/user/me 200 in 264ms
+ GET /api/menu-editor/addon-groups 200 in 218ms
+ GET /api/user/me 200 in 283ms
+ GET /api/notifications 200 in 301ms
+ GET /api/profile 200 in 318ms
+ GET /api/profile 200 in 317ms
+ GET /api/user/me 200 in 338ms
+ GET /api/categories?t=1789363327382 200 in 171ms
+ GET /api/profile/zones 200 in 224ms
+ GET /api/user/me 200 in 256ms
+ GET /api/profile 200 in 299ms
+ GET /api/notifications 200 in 279ms
+ GET /api/user/me 200 in 223ms
+ GET /api/profile 200 in 324ms
+ GET /api/menu-editor/addon-groups 200 in 178ms
+ GET /api/categories?t=1789363327385 200 in 186ms
+ GET /api/profile 200 in 286ms
+ GET /api/profile/zones 200 in 217ms
+ GET /dashboard/menu/view 200 in 73ms
+ GET /api/user/me 200 in 821ms
+ GET /api/menu-editor/addon-groups 200 in 344ms
+ GET /api/user/me 200 in 438ms
+ GET /api/notifications 200 in 451ms
+ GET /api/user/me 200 in 462ms
+ GET /api/profile 200 in 514ms
+ GET /api/profile 200 in 546ms
+ GET /api/categories?t=1789363331744 200 in 271ms
+ GET /api/profile/zones 200 in 310ms
+ GET /api/user/me 200 in 501ms
+ GET /api/notifications 200 in 466ms
+ GET /api/profile 200 in 526ms
+ GET /api/profile 200 in 558ms
+ GET /api/user/me 200 in 486ms
+ GET /api/categories?t=1789363331746 200 in 347ms
+ GET /api/profile 200 in 582ms
+ GET /api/menu-editor/addon-groups 200 in 367ms
+ GET /api/profile/zones 200 in 373ms
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 313ms
+ GET /api/menu-editor/addon-groups 200 in 486ms
+ GET /api/user/me 200 in 587ms
+ GET /api/user/me 200 in 588ms
+ GET /api/notifications 200 in 589ms
+ GET /api/profile 200 in 626ms
+ GET /api/profile 200 in 637ms
+ GET /api/categories?t=1789363335892 200 in 1193ms
+ GET /api/profile/zones 200 in 1646ms
+ GET /api/user/me 200 in 1676ms
+ GET /api/notifications 200 in 1661ms
+ GET /api/profile 200 in 1721ms
+ GET /api/profile 200 in 1674ms
+ GET /api/user/me 200 in 660ms
+ GET /api/menu-editor/addon-groups 200 in 257ms
+ GET /api/profile 200 in 291ms
+ GET /api/profile/zones 200 in 224ms
+ GET /api/categories?t=1789363335895 200 in 662ms
+ GET /dashboard/menu/view 200 in 60ms
+ GET /api/user/me 200 in 1655ms
+ GET /api/menu-editor/addon-groups 200 in 263ms
+ GET /api/user/me 200 in 265ms
+ GET /api/user/me 200 in 319ms
+ GET /api/notifications 200 in 336ms
+ GET /api/profile 200 in 350ms
+ GET /api/profile 200 in 351ms
+ GET /api/categories?t=1789363342569 200 in 179ms
+ GET /api/profile/zones 200 in 216ms
+ GET /api/user/me 200 in 1848ms
+ GET /api/notifications 200 in 2457ms
+ GET /api/profile 200 in 2462ms
+ GET /api/profile 200 in 2786ms
+ GET /api/categories?t=1789363342572 200 in 339ms
+ GET /api/profile/zones 200 in 329ms
+ GET /api/menu-editor/addon-groups 200 in 968ms
+ GET /api/profile 200 in 2671ms
+ GET /api/user/me 200 in 2708ms
+ GET /api/notifications 200 in 382ms
+ ✓ Compiled in 7.1s (2324 modules)
+ GET /dashboard/menu/view 200 in 274ms
+ GET /api/user/me 200 in 259ms
+ GET /api/menu-editor/addon-groups 200 in 239ms
+ GET /api/user/me 200 in 290ms
+ GET /api/notifications 200 in 328ms
+ GET /api/user/me 200 in 338ms
+ GET /api/profile 200 in 375ms
+ GET /api/profile 200 in 374ms
+ GET /api/categories?t=1789363398171 200 in 192ms
+ GET /api/profile/zones 200 in 235ms
+ GET /api/user/me 200 in 296ms
+ GET /api/notifications 200 in 285ms
+ GET /api/profile 200 in 353ms
+ GET /api/profile 200 in 301ms
+ GET /api/user/me 200 in 275ms
+ GET /api/profile 200 in 314ms
+ GET /api/menu-editor/addon-groups 200 in 210ms
+ GET /api/categories?t=1789363398173 200 in 203ms
+ GET /api/profile/zones 200 in 230ms
+ GET /dashboard/menu/view 200 in 53ms
+ GET /api/user/me 200 in 341ms
+ GET /api/menu-editor/addon-groups 200 in 247ms
+ GET /api/user/me 200 in 324ms
+ GET /api/user/me 200 in 325ms
+ GET /api/notifications 200 in 350ms
+ GET /api/profile 200 in 357ms
+ GET /api/profile 200 in 403ms
+ GET /api/categories?t=1789363401593 200 in 169ms
+ GET /api/profile/zones 200 in 188ms
+ GET /api/user/me 200 in 428ms
+ GET /api/notifications 200 in 414ms
+ GET /api/profile 200 in 469ms
+ GET /api/user/me 200 in 430ms
+ GET /api/profile 200 in 534ms
+ GET /api/profile 200 in 462ms
+ GET /api/categories?t=1789363401596 200 in 239ms
+ GET /api/menu-editor/addon-groups 200 in 257ms
+ GET /api/profile/zones 200 in 237ms
+ GET /dashboard/menu/view 200 in 42ms
+ GET /api/user/me 200 in 215ms
+ GET /api/menu-editor/addon-groups 200 in 220ms
+ GET /api/notifications 200 in 237ms
+ GET /api/user/me 200 in 255ms
+ GET /api/user/me 200 in 268ms
+ GET /api/profile 200 in 331ms
+ GET /api/profile 200 in 341ms
+ GET /api/categories?t=1789363404853 200 in 147ms
+ GET /api/profile/zones 200 in 179ms
+ GET /api/user/me 200 in 231ms
+ GET /api/profile 200 in 266ms
+ GET /api/notifications 200 in 256ms
+ GET /api/user/me 200 in 241ms
+ GET /api/profile 200 in 264ms
+ GET /api/profile 200 in 278ms
+ GET /api/menu-editor/addon-groups 200 in 210ms
+ GET /api/categories?t=1789363404856 200 in 216ms
+ GET /api/profile/zones 200 in 205ms
+ GET /dashboard/menu/view 200 in 35ms
+ GET /api/user/me 200 in 278ms
+ GET /api/menu-editor/addon-groups 200 in 218ms
+ GET /api/user/me 200 in 321ms
+ GET /api/notifications 200 in 322ms
+ GET /api/user/me 200 in 324ms
+ GET /api/profile 200 in 335ms
+ GET /api/categories?t=1789363408156 200 in 186ms
+ GET /api/profile 200 in 414ms
+ GET /api/profile/zones 200 in 287ms
+ GET /api/user/me 200 in 440ms
+ GET /api/profile 200 in 458ms
+ GET /api/notifications 200 in 351ms
+ GET /api/user/me 200 in 341ms
+ GET /api/profile 200 in 384ms
+ GET /api/menu-editor/addon-groups 200 in 182ms
+ GET /api/profile 200 in 334ms
+ GET /api/categories?t=1789363408159 200 in 181ms
+ GET /api/profile/zones 200 in 192ms
+ GET /dashboard/menu/view 200 in 41ms
+ GET /api/user/me 200 in 246ms
+ GET /api/menu-editor/addon-groups 200 in 193ms
+ GET /api/user/me 200 in 239ms
+ GET /api/user/me 200 in 273ms
+ GET /api/notifications 200 in 292ms
+ GET /api/profile 200 in 354ms
+ GET /api/profile 200 in 364ms
+ GET /api/categories?t=1789363412324 200 in 167ms
+ GET /api/profile/zones 200 in 219ms
+ GET /api/profile 200 in 292ms
+ GET /api/notifications 200 in 246ms
+ GET /api/user/me 200 in 310ms
+ GET /api/user/me 200 in 273ms
+ GET /api/profile 200 in 307ms
+ GET /api/menu-editor/addon-groups 200 in 189ms
+ GET /api/profile 200 in 311ms
+ GET /api/categories?t=1789363412327 200 in 276ms
+ GET /api/profile/zones 200 in 305ms
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 4298ms
+ GET /api/menu-editor/addon-groups 200 in 195ms
+ GET /api/user/me 200 in 230ms
+ GET /api/notifications 200 in 283ms
+ GET /api/user/me 200 in 310ms
+ GET /api/profile 200 in 323ms
+ GET /api/profile 200 in 337ms
+ GET /api/categories?t=1789363420503 200 in 186ms
+ GET /api/profile/zones 200 in 242ms
+ GET /api/profile 200 in 320ms
+ GET /api/user/me 200 in 294ms
+ GET /api/notifications 200 in 280ms
+ GET /api/user/me 200 in 275ms
+ GET /api/profile 200 in 332ms
+ GET /api/profile 200 in 470ms
+ GET /api/menu-editor/addon-groups 200 in 338ms
+ GET /api/categories?t=1789363420506 200 in 338ms
+ GET /api/profile/zones 200 in 331ms
+ GET /dashboard/menu/view 200 in 42ms
+ GET /api/user/me 200 in 259ms
+ GET /api/menu-editor/addon-groups 200 in 215ms
+ GET /api/notifications 200 in 278ms
+ GET /api/user/me 200 in 296ms
+ GET /api/user/me 200 in 307ms
+ GET /api/profile 200 in 344ms
+ GET /api/profile 200 in 357ms
+ GET /api/categories?t=1789363424593 200 in 156ms
+ GET /api/profile/zones 200 in 197ms
+ GET /api/user/me 200 in 250ms
+ GET /api/notifications 200 in 254ms
+ GET /api/profile 200 in 305ms
+ GET /api/user/me 200 in 244ms
+ GET /api/profile 200 in 301ms
+ GET /api/menu-editor/addon-groups 200 in 161ms
+ GET /api/profile 200 in 274ms
+ GET /api/categories?t=1789363424596 200 in 178ms
+ GET /api/profile/zones 200 in 236ms
+ GET /dashboard/menu/view 200 in 41ms
+ GET /api/user/me 200 in 643ms
+ GET /api/menu-editor/addon-groups 200 in 232ms
+ GET /api/user/me 200 in 337ms
+ GET /api/notifications 200 in 338ms
+ GET /api/profile 200 in 429ms
+ GET /api/profile 200 in 473ms
+ GET /api/user/me 200 in 474ms
+ GET /api/categories?t=1789363429457 200 in 240ms
+ GET /api/profile/zones 200 in 288ms
+ GET /api/profile 200 in 411ms
+ GET /api/user/me 200 in 347ms
+ GET /api/notifications 200 in 347ms
+ GET /api/user/me 200 in 367ms
+ GET /api/profile 200 in 371ms
+ GET /api/profile 200 in 304ms
+ GET /api/menu-editor/addon-groups 200 in 182ms
+ GET /api/categories?t=1789363429460 200 in 171ms
+ GET /api/profile/zones 200 in 257ms
+ GET /dashboard/menu/view 200 in 41ms
+ GET /api/user/me 200 in 234ms
+ GET /api/menu-editor/addon-groups 200 in 198ms
+ GET /api/user/me 200 in 244ms
+ GET /api/notifications 200 in 266ms
+ GET /api/user/me 200 in 277ms
+ GET /api/profile 200 in 295ms
+ GET /api/profile 200 in 302ms
+ GET /api/categories?t=1789363434017 200 in 160ms
+ GET /api/profile/zones 200 in 200ms
+ GET /api/profile 200 in 274ms
+ GET /api/user/me 200 in 256ms
+ GET /api/notifications 200 in 231ms
+ GET /api/profile 200 in 266ms
+ GET /api/user/me 200 in 232ms
+ GET /api/profile 200 in 299ms
+ GET /api/menu-editor/addon-groups 200 in 202ms
+ GET /api/categories?t=1789363434020 200 in 288ms
+ GET /api/profile/zones 200 in 306ms
+ GET /dashboard/menu/view 200 in 49ms
+ GET /api/user/me 200 in 377ms
+ GET /api/notifications 200 in 480ms
+ GET /api/user/me 200 in 610ms
+ GET /api/user/me 200 in 624ms
+ GET /api/notifications 200 in 633ms
+ GET /api/profile 200 in 733ms
+ GET /api/profile 200 in 752ms
+ GET /api/categories?t=1789363438593 200 in 227ms
+ GET /api/profile/zones 200 in 274ms
+ GET /api/profile 200 in 433ms
+ GET /api/user/me 200 in 437ms
+ GET /api/notifications 200 in 546ms
+ GET /api/profile 200 in 648ms
+ GET /api/menu-editor/addon-groups 200 in 1558ms
+ GET /api/user/me 200 in 651ms
+ GET /api/menu-editor/addon-groups 200 in 423ms
+ GET /api/profile 200 in 525ms
+ GET /api/categories?t=1789363438596 200 in 399ms
+ GET /api/profile/zones 200 in 271ms
+ GET /dashboard/menu/view 200 in 43ms
+ GET /api/user/me 200 in 247ms
+ GET /api/menu-editor/addon-groups 200 in 969ms
+ GET /api/notifications 200 in 1306ms
+ GET /api/user/me 200 in 1307ms
+ GET /api/user/me 200 in 1308ms
+ GET /api/profile 200 in 1311ms
+ GET /api/profile 200 in 1313ms
+ GET /api/categories?t=1789363443723 200 in 444ms
+ GET /api/notifications 200 in 403ms
+ GET /api/user/me 200 in 410ms
+ GET /api/profile/zones 200 in 415ms
+ GET /api/user/me 200 in 449ms
+ GET /api/profile 200 in 567ms
+ GET /api/profile 200 in 563ms
+ GET /api/menu-editor/addon-groups 200 in 614ms
+ GET /api/categories?t=1789363443726 200 in 643ms
+ GET /api/profile/zones 200 in 880ms
+ GET /api/profile 200 in 1116ms
+ GET /dashboard/menu/view 200 in 47ms
+ GET /api/user/me 200 in 309ms
+ GET /api/menu-editor/addon-groups 200 in 253ms
+ GET /api/user/me 200 in 297ms
+ GET /api/notifications 200 in 342ms
+ GET /api/user/me 200 in 358ms
+ GET /api/profile 200 in 360ms
+ GET /api/profile 200 in 374ms
+ GET /api/categories?t=1789363449562 200 in 165ms
+ GET /api/profile/zones 200 in 228ms
+ GET /api/user/me 200 in 239ms
+ GET /api/notifications 200 in 241ms
+ GET /api/profile 200 in 316ms
+ GET /api/profile 200 in 279ms
+ GET /api/user/me 200 in 247ms
+ GET /api/profile 200 in 292ms
+ GET /api/menu-editor/addon-groups 200 in 222ms
+ GET /api/categories?t=1789363449565 200 in 223ms
+ GET /api/profile/zones 200 in 262ms
+ GET /api/notifications 200 in 579ms
+ ✓ Compiled in 1139ms (1121 modules)
+ GET /api/notifications 200 in 8662ms
+ GET /api/notifications 200 in 1841ms
+ ✓ Compiled in 1954ms (2291 modules)
+ GET /api/notifications 200 in 532ms
+ GET /api/notifications 200 in 413ms
+ GET /dashboard/menu/view 200 in 265ms
+ ✓ Compiled /api/user/me in 342ms (1185 modules)
+ GET /api/user/me 200 in 665ms
+ ✓ Compiled /api/menu-editor/addon-groups in 119ms (1187 modules)
+ ✓ Compiled (1189 modules)
+ GET /api/user/me 200 in 344ms
+ GET /api/user/me 200 in 574ms
+ GET /api/menu-editor/addon-groups 200 in 575ms
+ GET /api/notifications 200 in 730ms
+ GET /api/profile 200 in 732ms
+ GET /api/profile 200 in 840ms
+ ✓ Compiled /api/profile/zones in 500ms (1200 modules)
+ ✓ Compiled (1202 modules)
+ GET /api/categories?t=1789363763669 200 in 951ms
+ GET /api/profile/zones 200 in 568ms
+ GET /api/user/me 200 in 608ms
+ GET /api/notifications 200 in 644ms
+ GET /api/profile 200 in 645ms
+ GET /api/profile 200 in 600ms
+ GET /api/menu-editor/addon-groups 200 in 239ms
+ GET /api/user/me 200 in 330ms
+ GET /api/categories?t=1789363763672 200 in 226ms
+ GET /api/profile/zones 200 in 262ms
+ GET /api/profile 200 in 361ms
+ GET /api/notifications 200 in 261ms
+ GET /api/notifications 200 in 275ms
+ ✓ Compiled /api/orders in 448ms (1204 modules)
+ ✓ Compiled (1209 modules)
+ GET /api/tables 200 in 1275ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 1302ms
+ GET /api/notifications 200 in 780ms
+ GET /api/profiles 200 in 1562ms
+ GET /dashboard/menu/view 200 in 206ms
+ GET /api/user/me 200 in 302ms
+ GET /api/notifications 200 in 315ms
+ GET /api/menu-editor/addon-groups 200 in 226ms
+ GET /api/user/me 200 in 274ms
+ GET /api/notifications 200 in 286ms
+ GET /api/user/me 200 in 308ms
+ GET /api/profile 200 in 346ms
+ GET /api/profile 200 in 347ms
+ GET /api/categories?t=1789363798683 200 in 164ms
+ GET /api/profile/zones 200 in 202ms
+ GET /api/user/me 200 in 231ms
+ GET /api/profile 200 in 324ms
+ GET /api/notifications 200 in 268ms
+ GET /api/profile 200 in 331ms
+ GET /api/user/me 200 in 280ms
+ GET /api/menu-editor/addon-groups 200 in 210ms
+ GET /api/profile 200 in 284ms
+ GET /api/categories?t=1789363798686 200 in 188ms
+ GET /api/profile/zones 200 in 237ms
+ GET /api/notifications 200 in 861ms
+ GET /api/notifications 200 in 724ms
+ GET /dashboard/menu/view 200 in 71ms
+ GET /api/notifications 200 in 50093ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 31553ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: I/O error: timed out, labels: {"RetryableWriteError"}`
+ GET /api/user/me 401 in 40028ms
+ ○ Compiling /api/auth/refresh-token ...
+ ✓ Compiled /api/auth/refresh-token in 610ms (1194 modules)
+ POST /api/auth/refresh-token 401 in 694ms
+ ✓ Compiled /api/staff/refresh-token in 444ms (2302 modules)
+ POST /api/staff/refresh-token 401 in 501ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: I/O error: timed out, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 40032ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30036ms
+ ✓ Compiled /api/auth/logout in 397ms (2304 modules)
+ POST /api/auth/logout 200 in 438ms
+ ○ Compiling /auth/custom ...
+ ✓ Compiled /auth/custom in 1606ms (2325 modules)
+ POST /api/auth/logout 200 in 1655ms
+ POST /api/auth/logout 200 in 1665ms
+ GET /auth/custom?error=session_expired 200 in 1670ms
+ ○ Compiling / ...
+ ✓ Compiled / in 680ms (2350 modules)
+ GET /api/tables 200 in 14673ms
+ GET /api/orders?active=true 200 in 14675ms
+ GET /api/profiles 200 in 14676ms
+ GET / 200 in 967ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/tables 401 in 30027ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/orders?active=true 401 in 30034ms
+ POST /api/auth/refresh-token 401 in 39ms
+ POST /api/staff/refresh-token 401 in 19ms
+ POST /api/auth/logout 200 in 15ms
+ POST /api/auth/logout 200 in 16ms
+ POST /api/auth/logout 200 in 12ms
+ POST /api/auth/logout 200 in 13ms
+ GET /api/notifications 200 in 234ms
+ GET /api/notifications 200 in 59535ms
+ GET /api/notifications 200 in 9451ms
+ GET /api/notifications 200 in 9451ms
+ GET /api/profiles 200 in 19438ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /auth/custom?error=session_expired 200 in 55ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30019ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30040ms
+prisma:error 
+Invalid `prisma.table.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/tables 500 in 73503ms
+prisma:error 
+Invalid `prisma.businessProfile.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+GET /api/profiles error: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.businessProfile.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/profiles/route.ts:16:21)
+  14 |     }
+  15 |
+> 16 |     const profiles = await prisma.businessProfile.findMany({
+     |                     ^
+  17 |       where: { userId: effectiveId },
+  18 |       orderBy: { createdAt: 'asc' }
+  19 |     }); {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/profiles 500 in 75595ms
+ POST /api/auth/refresh-token 401 in 18ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+prisma:error 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+GET_ORDERS_ERROR: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/orders/route.ts:55:23)
+  53 |         }
+  54 |
+> 55 |         const orders = await prisma.order.findMany({
+     |                       ^
+  56 |             where: whereClause,
+  57 |             take: limit,
+  58 |             skip: skip, {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/orders?active=true 500 in 86844ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+Custom Auth Refresh Token Error: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async POST (src/app/api/auth/refresh-token/route.ts:32:21)
+  30 |
+  31 |         // 2. Fetch User & Validate Token Hash
+> 32 |         const user = await prisma.user.findUnique({
+     |                     ^
+  33 |             where: { id: userId }
+  34 |         });
+  35 | {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ POST /api/auth/refresh-token 500 in 30074ms
+ POST /api/staff/refresh-token 401 in 18ms
+prisma:error 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+SYNC ERROR IN /api/notifications: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/notifications/route.ts:26:29)
+  24 |
+  25 |         // ── New QR Orders ──────────────────────────────────────────────
+> 26 |         const recentOrders = await prisma.order.findMany({
+     |                             ^
+  27 |             where: {
+  28 |                 clerkUserId: clerkId,
+  29 |                 createdAt: { gte: sessionStart }, {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/notifications 500 in 95279ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: I/O error: Operation timed out (os error 60), labels: {}`
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30073ms
+ POST /api/staff/refresh-token 401 in 16ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30020ms
+prisma:error 
+Invalid `prisma.review.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+SYNC ERROR IN /api/notifications: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.review.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/notifications/route.ts:45:30)
+  43 |
+  44 |         // ── New Reviews ────────────────────────────────────────────────
+> 45 |         const recentReviews = await prisma.review.findMany({
+     |                              ^
+  46 |             where: {
+  47 |                 clerkUserId: clerkId,
+  48 |                 createdAt: { gte: sessionStart }, {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/notifications 500 in 113339ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: No available servers. Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 30015ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 14906ms
+ GET /api/tables 200 in 15484ms
+ GET /api/profiles 200 in 13366ms
+ POST /api/auth/logout 200 in 41ms
+ POST /api/auth/logout 200 in 16ms
+ POST /api/auth/logout 200 in 14ms
+ POST /api/auth/refresh-token 401 in 17ms
+ GET /api/notifications 200 in 194ms
+ GET /api/notifications 200 in 594ms
+ GET /api/notifications 200 in 17126ms
+ GET /api/notifications 200 in 32376ms
+ GET /api/notifications 200 in 23578ms
+ GET /auth/custom?error=session_expired 200 in 83ms
+ GET /api/notifications 200 in 29464ms
+ POST /api/auth/logout 200 in 30680ms
+ GET /auth/custom?error=session_expired 200 in 69ms
+ GET /dashboard/menu/view 200 in 139ms
+ GET /api/user/me 200 in 326ms
+ ○ Compiling /api/profile ...
+ ✓ Compiled /api/profile in 665ms (1227 modules)
+ ✓ Compiled (1229 modules)
+ GET /api/menu-editor/addon-groups 200 in 1300ms
+ GET /api/user/me 200 in 1372ms
+ GET /api/notifications 200 in 1384ms
+ GET /api/user/me 200 in 1413ms
+ GET /api/profile 200 in 1604ms
+ GET /api/profile 200 in 1593ms
+ ✓ Compiled /api/profile/zones in 469ms (1240 modules)
+ ✓ Compiled (1242 modules)
+ GET /api/categories?t=1789364010548 200 in 862ms
+ GET /api/profile/zones 200 in 918ms
+ GET /api/user/me 200 in 653ms
+ GET /api/profile 200 in 668ms
+ GET /api/notifications 200 in 672ms
+ GET /api/profile 200 in 751ms
+ GET /api/user/me 200 in 245ms
+ GET /api/menu-editor/addon-groups 200 in 196ms
+ GET /api/profile/zones 200 in 234ms
+ GET /api/categories?t=1789364010551 200 in 235ms
+ GET /api/profile 200 in 321ms
+ GET /api/notifications 200 in 262ms
+ GET /api/notifications 200 in 235ms
+ ✓ Compiled /api/orders in 198ms (1240 modules)
+ ✓ Compiled (1245 modules)
+ GET /api/tables 200 in 572ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 615ms
+ GET /api/profiles 200 in 658ms
+ GET /api/notifications 200 in 309ms
+ GET /dashboard/menu/view 200 in 189ms
+ GET /api/user/me 200 in 282ms
+ GET /api/menu-editor/addon-groups 200 in 231ms
+ GET /api/notifications 200 in 269ms
+ GET /api/user/me 200 in 275ms
+ GET /api/user/me 200 in 337ms
+ GET /api/profile 200 in 349ms
+ GET /api/profile 200 in 350ms
+ GET /api/categories?t=1789364046285 200 in 176ms
+ GET /api/profile/zones 200 in 281ms
+ GET /api/user/me 200 in 301ms
+ GET /api/profile 200 in 358ms
+ GET /api/notifications 200 in 317ms
+ GET /api/user/me 200 in 301ms
+ GET /api/profile 200 in 444ms
+ GET /api/categories?t=1789364046288 200 in 181ms
+ GET /api/menu-editor/addon-groups 200 in 208ms
+ GET /api/profile 200 in 331ms
+ GET /api/profile/zones 200 in 226ms
+ GET /api/notifications 200 in 274ms
+ GET /api/notifications 200 in 1396ms
+ GET /api/notifications 200 in 272ms
+ GET /api/notifications 200 in 274ms
+ GET /api/notifications 200 in 364ms
+ GET /api/tables 200 in 207ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 228ms
+ GET /api/profiles 200 in 399ms
+ GET /api/notifications 200 in 288ms
+ GET /dashboard/menu/view 200 in 67ms
+ GET /api/user/me 200 in 391ms
+ GET /api/menu-editor/addon-groups 200 in 266ms
+ GET /api/user/me 200 in 360ms
+ GET /api/user/me 200 in 362ms
+ GET /api/notifications 200 in 380ms
+ GET /api/profile 200 in 382ms
+ GET /api/profile 200 in 369ms
+ GET /api/categories?t=1789364080327 200 in 187ms
+ GET /api/profile/zones 200 in 249ms
+ GET /api/user/me 200 in 282ms
+ GET /api/profile 200 in 337ms
+ GET /api/notifications 200 in 329ms
+ GET /api/user/me 200 in 264ms
+ GET /api/profile 200 in 377ms
+ GET /api/menu-editor/addon-groups 200 in 192ms
+ GET /api/categories?t=1789364080330 200 in 174ms
+ GET /api/profile 200 in 295ms
+ GET /api/profile/zones 200 in 203ms
+ GET /api/notifications 200 in 910ms
+ GET /api/notifications 200 in 334ms
+ GET /api/notifications 200 in 255ms
+ GET /api/notifications 200 in 241ms
+ GET /api/notifications 200 in 363ms
+ GET /api/tables 200 in 206ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 215ms
+ GET /api/profiles 200 in 332ms
+ GET /api/notifications 200 in 541ms
+ GET /api/notifications 200 in 578ms
+ GET /api/notifications 200 in 245ms
+ GET /api/tables 200 in 190ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 200ms
+ GET /api/profiles 200 in 315ms
+ GET /api/notifications 200 in 279ms
+ GET /api/notifications 200 in 251ms
+ GET /api/notifications 200 in 327ms
+ GET /api/notifications 200 in 250ms
+ GET /api/notifications 200 in 235ms
+ GET /api/notifications 200 in 263ms
+ GET /api/notifications 200 in 411ms
+ GET /api/notifications 200 in 373ms
+ GET /api/tables 200 in 197ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 208ms
+ GET /api/profiles 200 in 312ms
+ GET /api/notifications 200 in 290ms
+ GET /api/notifications 200 in 335ms
+ GET /api/notifications 200 in 266ms
+ GET /api/notifications 200 in 612ms
+ GET /api/notifications 200 in 748ms
+ GET /api/notifications 200 in 658ms
+ GET /api/notifications 200 in 257ms
+ GET /api/tables 200 in 197ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 204ms
+ GET /api/profiles 200 in 303ms
+ GET /api/notifications 200 in 234ms
+ GET /api/notifications 200 in 240ms
+ GET /api/notifications 200 in 226ms
+ GET /api/tables 200 in 210ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 219ms
+ GET /api/profiles 200 in 324ms
+ GET /api/notifications 200 in 230ms
+ GET /api/notifications 200 in 253ms
+ GET /api/notifications 200 in 527ms
+ GET /api/notifications 200 in 254ms
+ GET /api/notifications 200 in 231ms
+ GET /api/notifications 200 in 359ms
+ GET /api/notifications 200 in 264ms
+ GET /api/notifications 200 in 277ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 219ms
+ GET /api/profiles 200 in 329ms
+ GET /api/tables 200 in 572ms
+ GET /api/notifications 200 in 328ms
+ GET /api/notifications 200 in 347ms
+ GET /api/notifications 200 in 248ms
+ GET /api/notifications 200 in 290ms
+ GET /api/notifications 200 in 728ms
+ GET /api/notifications 200 in 1360ms
+ GET /api/notifications 200 in 258ms
+ GET /api/tables 200 in 284ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 297ms
+ GET /api/profiles 200 in 433ms
+ GET /api/notifications 200 in 414ms
+ GET /api/notifications 200 in 436ms
+ GET /api/notifications 200 in 548ms
+ GET /api/tables 200 in 260ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 271ms
+ GET /api/profiles 200 in 430ms
+ GET /api/notifications 200 in 229ms
+ GET /api/notifications 200 in 264ms
+ GET /api/notifications 200 in 235ms
+ GET /api/notifications 200 in 385ms
+ GET /api/notifications 200 in 265ms
+ GET /api/notifications 200 in 359ms
+ GET /api/notifications 200 in 303ms
+ GET /api/notifications 200 in 261ms
+ GET /api/tables 200 in 2164ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 2167ms
+ GET /api/notifications 200 in 1977ms
+ GET /api/profiles 200 in 2281ms
+ GET /api/notifications 200 in 566ms
+ GET /api/notifications 200 in 711ms
+ GET /api/notifications 200 in 304ms
+ GET /api/notifications 200 in 280ms
+ GET /api/notifications 200 in 398ms
+ GET /api/notifications 200 in 296ms
+ GET /api/tables 200 in 1767ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 1783ms
+ GET /api/notifications 200 in 1682ms
+ GET /api/notifications 200 in 1976ms
+ GET /api/profiles 200 in 2237ms
+ GET /api/notifications 200 in 262ms
+ GET /api/tables 200 in 959ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 971ms
+ GET /api/notifications 200 in 657ms
+ GET /api/profiles 200 in 1063ms
+ GET /api/notifications 200 in 517ms
+ GET /api/notifications 200 in 284ms
+ GET /api/notifications 200 in 1136ms
+ GET /api/notifications 200 in 995ms
+ GET /api/notifications 200 in 271ms
+ GET /api/notifications 200 in 295ms
+ GET /api/notifications 200 in 227ms
+ GET /api/tables 200 in 202ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 219ms
+ GET /api/profiles 200 in 351ms
+ GET /api/notifications 200 in 250ms
+ GET /api/notifications 200 in 261ms
+ GET /api/notifications 200 in 256ms
+ GET /api/notifications 200 in 254ms
+ GET /api/notifications 200 in 379ms
+ GET /api/notifications 200 in 253ms
+ GET /api/notifications 200 in 263ms
+ GET /api/tables 200 in 202ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 263ms
+ GET /api/profiles 200 in 398ms
+ GET /api/notifications 200 in 283ms
+ GET /api/notifications 200 in 278ms
+ GET /api/notifications 200 in 294ms
+ GET /api/tables 200 in 196ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 205ms
+ GET /api/profiles 200 in 316ms
+ GET /api/notifications 200 in 269ms
+ GET /api/notifications 200 in 217ms
+ GET /api/notifications 200 in 236ms
+ GET /api/notifications 200 in 296ms
+ GET /api/notifications 200 in 273ms
+ GET /api/notifications 200 in 306ms
+ GET /dashboard/menu/view 200 in 118ms
+ GET /api/notifications 200 in 339ms
+ GET /api/user/me 200 in 304ms
+ GET /api/notifications 200 in 303ms
+ GET /api/menu-editor/addon-groups 200 in 310ms
+ GET /api/notifications 200 in 364ms
+ GET /api/user/me 200 in 379ms
+ GET /api/user/me 200 in 381ms
+ GET /api/profile 200 in 445ms
+ GET /api/profile 200 in 429ms
+ GET /api/categories?t=1789364370771 200 in 242ms
+ GET /api/profile/zones 200 in 261ms
+ GET /api/profile 200 in 329ms
+ GET /api/user/me 200 in 330ms
+ GET /api/notifications 200 in 360ms
+ GET /api/profile 200 in 367ms
+ GET /api/user/me 200 in 344ms
+ GET /api/menu-editor/addon-groups 200 in 212ms
+ GET /api/profile 200 in 329ms
+ GET /api/categories?t=1789364370776 200 in 232ms
+ GET /api/profile/zones 200 in 286ms
+ GET /api/tables 200 in 183ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 233ms
+ GET /api/profiles 200 in 324ms
+ GET /api/notifications 200 in 237ms
+ GET /api/notifications 200 in 331ms
+ GET /api/notifications 200 in 264ms
+ GET /api/notifications 200 in 280ms
+ GET /api/notifications 200 in 312ms
+ GET /api/notifications 200 in 1928ms
+ GET /api/notifications 200 in 1714ms
+ GET /api/notifications 200 in 1502ms
+ GET /api/notifications 200 in 3000ms
+ GET /api/tables 200 in 366ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 379ms
+ GET /api/profiles 200 in 665ms
+ GET /api/tables 200 in 511ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 538ms
+ GET /api/notifications 200 in 646ms
+ GET /api/profiles 200 in 886ms
+ GET /api/notifications 200 in 848ms
+ GET /api/notifications 200 in 800ms
+ GET /dashboard/menu/view 200 in 141ms
+ GET /api/user/me 200 in 850ms
+ GET /api/menu-editor/addon-groups 200 in 271ms
+ GET /api/user/me 200 in 332ms
+ GET /api/user/me 200 in 366ms
+ GET /api/profile 200 in 383ms
+ GET /api/profile 200 in 369ms
+ GET /api/notifications 200 in 401ms
+ GET /api/categories?t=1789364405944 200 in 198ms
+ GET /api/profile/zones 200 in 347ms
+ GET /api/notifications 200 in 428ms
+ GET /api/profile 200 in 368ms
+ GET /api/notifications 200 in 401ms
+ GET /api/user/me 200 in 420ms
+ GET /api/profile 200 in 482ms
+ GET /api/user/me 200 in 353ms
+ GET /api/menu-editor/addon-groups 200 in 259ms
+ GET /api/profile 200 in 362ms
+ GET /api/categories?t=1789364405947 200 in 236ms
+ GET /api/profile/zones 200 in 319ms
+ GET /api/tables 200 in 367ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 451ms
+ GET /api/profiles 200 in 546ms
+ GET /api/notifications 200 in 317ms
+ GET /api/notifications 200 in 297ms
+ GET /api/notifications 200 in 309ms
+ GET /api/notifications 200 in 271ms
+ GET /api/notifications 200 in 348ms
+ GET /api/notifications 200 in 365ms
+ GET /api/notifications 200 in 337ms
+ GET /api/notifications 200 in 331ms
+ GET /api/notifications 200 in 331ms
+ GET /api/notifications 200 in 295ms
+ GET /api/notifications 200 in 268ms
+ GET /api/notifications 200 in 347ms
+ GET /api/notifications 200 in 586ms
+ GET /api/tables 200 in 1115ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 1164ms
+ GET /api/tables 200 in 831ms
+ GET /api/profiles 200 in 1717ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 863ms
+ GET /api/notifications 200 in 973ms
+ GET /api/profiles 200 in 951ms
+ GET /api/notifications 200 in 670ms
+ GET /dashboard/menu/view 200 in 164ms
+ GET /api/user/me 200 in 285ms
+ GET /api/notifications 200 in 288ms
+ GET /api/notifications 200 in 327ms
+ GET /api/menu-editor/addon-groups 200 in 332ms
+ GET /api/user/me 200 in 399ms
+ GET /api/notifications 200 in 431ms
+ GET /api/user/me 200 in 433ms
+ GET /api/notifications 200 in 364ms
+ GET /api/profile 200 in 500ms
+ GET /api/profile 200 in 515ms
+ GET /api/categories?t=1789364440736 200 in 248ms
+ GET /api/profile/zones 200 in 283ms
+ GET /api/user/me 200 in 398ms
+ GET /api/profile 200 in 414ms
+ GET /api/notifications 200 in 470ms
+ GET /api/profile 200 in 539ms
+ GET /api/user/me 200 in 611ms
+ GET /api/profile 200 in 768ms
+ GET /api/menu-editor/addon-groups 200 in 850ms
+ GET /api/categories?t=1789364440739 200 in 1051ms
+ GET /api/profile/zones 200 in 632ms
+ GET /api/notifications 200 in 399ms
+ GET /api/notifications 200 in 368ms
+ GET /api/notifications 200 in 404ms
+ GET /api/notifications 200 in 432ms
+ GET /api/notifications 200 in 527ms
+ GET /api/notifications 200 in 562ms
+ GET /api/notifications 200 in 276ms
+ GET /api/notifications 200 in 333ms
+ GET /api/tables 200 in 415ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 544ms
+ GET /api/profiles 200 in 749ms
+ GET /api/notifications 200 in 813ms
+ GET /api/tables 200 in 958ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 986ms
+ GET /api/notifications 200 in 1168ms
+ GET /api/profiles 200 in 1228ms
+ GET /api/notifications 200 in 575ms
+ GET /api/notifications 200 in 580ms
+ GET /api/notifications 200 in 251ms
+ GET /api/notifications 200 in 290ms
+ GET /api/tables 200 in 918ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 983ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 653ms
+ GET /api/tables 200 in 667ms
+ GET /api/notifications 200 in 683ms
+ GET /api/profiles 200 in 1099ms
+ GET /api/notifications 200 in 552ms
+ GET /api/profiles 200 in 937ms
+ GET /api/notifications 200 in 1040ms
+ GET /api/notifications 200 in 1229ms
+ GET /api/notifications 200 in 293ms
+ GET /api/notifications 200 in 333ms
+ GET /api/notifications 200 in 386ms
+ GET /api/notifications 200 in 387ms
+ GET /api/notifications 200 in 378ms
+ GET /api/notifications 200 in 364ms
+ GET /api/notifications 200 in 4706ms
+ GET /api/notifications 200 in 963ms
+ GET /api/notifications 200 in 4869ms
+ GET /api/notifications 200 in 951ms
+ GET /api/notifications 200 in 921ms
+ GET /api/notifications 200 in 849ms
+ GET /api/tables 200 in 483ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 566ms
+ GET /api/profiles 200 in 600ms
+ GET /api/notifications 200 in 1366ms
+ GET /api/tables 200 in 1568ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 1575ms
+ GET /api/profiles 200 in 1901ms
+ GET /api/notifications 200 in 762ms
+ GET /api/notifications 200 in 1758ms
+ GET /api/notifications 200 in 1439ms
+ GET /api/notifications 200 in 1446ms
+ GET /api/notifications 200 in 1850ms
+ GET /api/notifications 200 in 1098ms
+ GET /api/notifications 200 in 1318ms
+ GET /api/notifications 200 in 632ms
+ GET /api/notifications 200 in 429ms
+ GET /api/notifications 200 in 383ms
+ GET /api/notifications 200 in 369ms
+ GET /api/notifications 200 in 1132ms
+ GET /api/notifications 200 in 565ms
+ GET /api/profiles 200 in 1973ms
+ GET /api/tables 200 in 4739ms
+ GET /api/tables 200 in 4806ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 4807ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 4808ms
+ GET /api/profiles 200 in 5120ms
+ GET /api/notifications 200 in 5201ms
+ GET /api/notifications 200 in 5069ms
+ GET /api/notifications 200 in 4448ms
+ GET /api/notifications 200 in 4415ms
+ GET /api/notifications 200 in 633ms
+ GET /api/notifications 200 in 641ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 904ms
+ GET /api/tables 200 in 1591ms
+ GET /api/tables 200 in 1687ms
+ GET /api/profiles 200 in 2384ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 2082ms
+ GET /api/notifications 200 in 2250ms
+ GET /api/notifications 200 in 1867ms
+ GET /api/profiles 200 in 2656ms
+ GET /api/notifications 200 in 1998ms
+ GET /api/notifications 200 in 2870ms
+ GET /api/notifications 200 in 2291ms
+ GET /api/notifications 200 in 1886ms
+ GET /api/notifications 200 in 1674ms
+ GET /api/notifications 200 in 1751ms
+ GET /api/notifications 200 in 2131ms
+ GET /api/notifications 200 in 2212ms
+ GET /api/notifications 200 in 1994ms
+ GET /api/notifications 200 in 768ms
+ GET /api/notifications 200 in 1418ms
+ GET /api/notifications 200 in 1356ms
+ GET /api/notifications 200 in 1376ms
+ GET /api/notifications 200 in 1265ms
+ GET /api/tables 200 in 433ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 595ms
+ GET /api/profiles 200 in 692ms
+ GET /api/notifications 200 in 616ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 656ms
+ GET /api/tables 200 in 725ms
+ GET /api/profiles 200 in 1052ms
+ GET /api/notifications 200 in 735ms
+ GET /api/notifications 200 in 837ms
+ GET /api/notifications 200 in 708ms
+ GET /api/notifications 200 in 766ms
+ GET /api/notifications 200 in 851ms
+ GET /api/notifications 200 in 411ms
+ GET /api/notifications 200 in 698ms
+ GET /api/notifications 200 in 829ms
+ GET /api/notifications 200 in 1221ms
+ GET /api/notifications 200 in 1002ms
+ GET /api/notifications 200 in 1248ms
+ GET /api/notifications 200 in 389ms
+ GET /api/notifications 200 in 540ms
+ GET /api/tables 200 in 890ms
+ GET /api/profiles 200 in 1533ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 1534ms
+ GET /api/tables 200 in 2301ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 2430ms
+ GET /api/notifications 200 in 2699ms
+ GET /api/notifications 200 in 1914ms
+ GET /api/notifications 200 in 2610ms
+ GET /api/notifications 200 in 1973ms
+ GET /api/profiles 200 in 2699ms
+ GET /dashboard/menu/view 200 in 5008ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 38511ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 38005ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 34150ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 33946ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 33766ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/notifications 401 in 33617ms
+prisma:error 
+Invalid `prisma.table.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+ GET /api/tables 500 in 41645ms
+prisma:error 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+GET_ORDERS_ERROR: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Connection pool for ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017 cleared because another operation failed with: Kind: I/O error: timed out, labels: {}, labels: {"RetryableWriteError"}`
+    at async GET (src/app/api/orders/route.ts:55:23)
+  53 |         }
+  54 |
+> 55 |         const orders = await prisma.order.findMany({
+     |                       ^
+  56 |             where: whereClause,
+  57 |             take: limit,
+  58 |             skip: skip, {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/orders?active=true 500 in 42815ms
+prisma:error 
+Invalid `prisma.table.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/tables 500 in 42652ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: I/O error: timed out, labels: {"RetryableWriteError"}`
+ GET /api/profiles 401 in 42844ms
+prisma:error 
+Invalid `prisma.businessProfile.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+GET /api/profiles error: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.businessProfile.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/profiles/route.ts:16:21)
+  14 |     }
+  15 |
+> 16 |     const profiles = await prisma.businessProfile.findMany({
+     |                     ^
+  17 |       where: { userId: effectiveId },
+  18 |       orderBy: { createdAt: 'asc' }
+  19 |     }); {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/profiles 500 in 44065ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+ GET /api/notifications 401 in 31213ms
+prisma:error 
+Invalid `prisma.user.findUnique()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 7.834129257s, Last Update Time: 2026-09-14 5:43:56.168 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"diskState": "READY", "workloadType": "OPERATIONAL", "provider": "AWS", "region": "AP_SOUTH_1", "nodeType": "ELECTABLE", "cacheState": "READY", "availabilityZone": "aps1-az1"} } ] }, labels: {}`
+ GET /api/notifications 401 in 30935ms
+prisma:error 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+SYNC ERROR IN /api/notifications: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/notifications/route.ts:26:29)
+  24 |
+  25 |         // ── New QR Orders ──────────────────────────────────────────────
+> 26 |         const recentOrders = await prisma.order.findMany({
+     |                             ^
+  27 |             where: {
+  28 |                 clerkUserId: clerkId,
+  29 |                 createdAt: { gte: sessionStart }, {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/notifications 500 in 44322ms
+prisma:error 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+SYNC ERROR IN /api/notifications: Error [PrismaClientKnownRequestError]: 
+Invalid `prisma.order.findMany()` invocation:
+
+
+Raw query failed. Code: `unknown`. Message: `Kind: Server selection timeout: None of the available servers suitable for criteria ReadPreference(Primary). Topology: { Type: ReplicaSetNoPrimary, Set Name: atlas-oicdef-shard-0, Max Set Version: 368, Max Election ID: 7fffffff000000000000014e, Servers: [ { Address: ac-0r1awp8-shard-00-02.lprzjz2.mongodb.net:27017, Type: RsSecondary, Average RTT: 2.891980204s, Last Update Time: 2026-09-14 5:43:53.301 +00:00:00, Max Wire Version: 25, Min Wire Version: 0, Replica Set Name: atlas-oicdef-shard-0, Replica Set Version: 368, Tags: {"availabilityZone": "aps1-az2", "cacheState": "READY", "diskState": "READY", "nodeType": "ELECTABLE", "workloadType": "OPERATIONAL", "region": "AP_SOUTH_1", "provider": "AWS"} }, { Address: ac-0r1awp8-shard-00-01.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} }, { Address: ac-0r1awp8-shard-00-00.lprzjz2.mongodb.net:27017, Type: Unknown, Error: Kind: I/O error: timed out, labels: {} } ] }, labels: {}`
+    at async GET (src/app/api/notifications/route.ts:26:29)
+  24 |
+  25 |         // ── New QR Orders ──────────────────────────────────────────────
+> 26 |         const recentOrders = await prisma.order.findMany({
+     |                             ^
+  27 |             where: {
+  28 |                 clerkUserId: clerkId,
+  29 |                 createdAt: { gte: sessionStart }, {
+  code: 'P2010',
+  clientVersion: '6.1.0',
+  meta: [Object]
+}
+ GET /api/notifications 500 in 45287ms
+ GET /api/notifications 200 in 51409ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 45661ms
+ GET /api/tables 200 in 22924ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 22929ms
+ GET /api/notifications 200 in 45900ms
+ GET /api/notifications 200 in 27961ms
+ GET /api/tables 200 in 24014ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 24073ms
+ GET /api/notifications 200 in 28058ms
+ GET /api/notifications 200 in 28076ms
+ GET /api/profiles 200 in 24333ms
+ GET /api/notifications 200 in 8878ms
+ GET /api/notifications 200 in 28440ms
+ GET /api/notifications 200 in 19127ms
+ GET /api/notifications 200 in 8874ms
+ GET /api/notifications 200 in 19051ms
+ GET /api/profiles 200 in 24687ms
+ ○ Compiling /api/auth/refresh-token ...
+ GET /api/notifications 200 in 52416ms
+ ✓ Compiled /api/auth/refresh-token in 17.2s (1228 modules)
+ GET /api/notifications 200 in 89040ms
+ GET /api/notifications 200 in 35506ms
+ GET /api/notifications 200 in 35585ms
+ GET /api/notifications 200 in 35837ms
+ GET /api/notifications 200 in 35953ms
+ GET /api/notifications 200 in 36253ms
+ GET /api/notifications 200 in 36372ms
+ GET /api/notifications 200 in 36469ms
+ GET /api/notifications 200 in 36265ms
+ GET /api/notifications 200 in 36314ms
+ GET /api/notifications 200 in 36536ms
+ POST /api/auth/refresh-token 401 in 39037ms
+ POST /api/auth/refresh-token 401 in 39066ms
+ POST /api/auth/refresh-token 401 in 39086ms
+ POST /api/auth/refresh-token 401 in 39101ms
+ POST /api/auth/refresh-token 401 in 39140ms
+ POST /api/auth/refresh-token 401 in 38963ms
+ GET /api/tables 200 in 38453ms
+ GET /api/notifications 200 in 38745ms
+ GET /api/notifications 200 in 38811ms
+ GET /api/notifications 200 in 38875ms
+ GET /api/notifications 200 in 38926ms
+ GET /api/notifications 200 in 21902ms
+ GET /api/notifications 200 in 21903ms
+ GET /api/notifications 200 in 21791ms
+ GET /api/notifications 200 in 21790ms
+ GET /api/notifications 200 in 21790ms
+ GET /api/notifications 200 in 21790ms
+ GET /api/notifications 200 in 21771ms
+ GET /api/notifications 200 in 19794ms
+ GET /api/tables 200 in 39084ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 39086ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 39086ms
+ GET /api/notifications 200 in 20288ms
+ GET /api/profiles 200 in 39928ms
+ GET /api/profiles 200 in 39978ms
+ ○ Compiling /api/staff/refresh-token ...
+ GET /api/notifications 200 in 1386ms
+ ✓ Compiled /api/staff/refresh-token in 27.9s (1230 modules)
+ GET /api/tables 200 in 32009ms
+ GET /api/tables 200 in 32056ms
+ GET /api/tables 200 in 31915ms
+ GET /api/notifications 200 in 32136ms
+ GET /api/notifications 200 in 32137ms
+ GET /api/notifications 200 in 31985ms
+ GET /api/notifications 200 in 31884ms
+ GET /api/notifications 200 in 31901ms
+ GET /api/notifications 200 in 31902ms
+ GET /api/notifications 200 in 31919ms
+ GET /api/notifications 200 in 31962ms
+ GET /api/notifications 200 in 31949ms
+ GET /api/profiles 200 in 32101ms
+ GET /api/profiles 200 in 32117ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 32298ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 32304ms
+ GET /api/notifications 200 in 32570ms
+ GET /api/notifications 200 in 32448ms
+ GET /api/notifications 200 in 32452ms
+ GET /api/notifications 200 in 32465ms
+ GET /api/notifications 200 in 32637ms
+ POST /api/staff/refresh-token 401 in 32851ms
+ POST /api/staff/refresh-token 401 in 32852ms
+ POST /api/staff/refresh-token 401 in 32729ms
+ POST /api/staff/refresh-token 401 in 32744ms
+ POST /api/staff/refresh-token 401 in 32745ms
+ POST /api/staff/refresh-token 401 in 31008ms
+ GET /api/notifications 200 in 18400ms
+ GET /api/notifications 200 in 18413ms
+ GET /api/notifications 200 in 18401ms
+ GET /api/notifications 200 in 7551ms
+ GET /api/notifications 200 in 7554ms
+ GET /api/notifications 200 in 7555ms
+ GET /api/notifications 200 in 4756ms
+[GET_ORDERS] EffectiveID: user_3Aq15KFvzPJLXIiJ7HFndJrrnbE, Count: 0
+ GET /api/orders?active=true 200 in 33018ms
+ GET /api/profiles 200 in 33114ms
+ ○ Compiling /api/auth/logout ...
+ ✓ Compiled /api/auth/logout in 2.3s (1232 modules)
+ GET /api/notifications 200 in 7497ms
+ GET /api/notifications 200 in 7498ms
+ GET /api/notifications 200 in 7498ms
+ GET /api/notifications 200 in 7499ms
+ GET /api/notifications 200 in 7600ms
+ GET /api/notifications 200 in 7625ms
+ GET /api/notifications 200 in 7626ms
+ GET /api/notifications 200 in 7666ms
+ GET /api/notifications 200 in 7675ms
+ GET /api/notifications 200 in 8220ms
+ GET /api/notifications 200 in 8265ms
+ POST /api/auth/logout 200 in 8431ms
+ POST /api/auth/logout 200 in 8548ms
+ POST /api/auth/logout 200 in 8496ms
+ POST /api/auth/logout 200 in 8583ms
+ POST /api/auth/logout 200 in 8584ms
+ POST /api/auth/logout 200 in 8597ms
+ POST /api/auth/logout 200 in 8551ms
+ POST /api/auth/logout 200 in 8574ms
+ POST /api/auth/logout 200 in 8576ms
+ GET /api/notifications 200 in 7948ms
+ GET /api/notifications 200 in 8012ms
+ GET /api/notifications 200 in 4868ms
+ GET /api/notifications 200 in 8737ms
+ GET /api/notifications 200 in 8208ms
+ GET /api/notifications 200 in 8208ms
+ ✓ Compiled in 168.9s (1281 modules)
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/tables
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/orders
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/profiles
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/tables
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/orders
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/profiles
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/tables
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/profiles
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/orders
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/tables
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/tables
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/tables
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '3afbe32acb31c3350f688db6dd59de47bf122749d755fdaa'
+}
+]
+MIDDLEWARE URL: /api/orders
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/orders
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/orders
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/profiles
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/profiles
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/profiles
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+ GET /auth/custom?error=session_expired 200 in 42438ms
+ GET /dashboard/menu/view 200 in 42781ms
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2023f50d6570c8b44c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2023f50d6570c8b44c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+ GET /auth/custom?error=session_expired 200 in 41393ms
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2023f50d6570c8b44c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: []
+ GET /auth/custom?error=session_expired 200 in 42949ms
+ GET /auth/custom?error=session_expired 200 in 42950ms
+ GET /auth/custom?error=session_expired 200 in 42951ms
+ GET /auth/custom?error=session_expired 200 in 42954ms
+ GET /auth/custom?error=session_expired 200 in 42964ms
+ ✓ Compiled in 33s (1130 modules)
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: 'efe0946e03695a174c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: 'efe0946e03695a174c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: 'efe0946e03695a174c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: 'efe0946e03695a174c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: 'efe0946e03695a174c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: 'efe0946e03695a174c16d86b538b86e4be12854796d2c5ec'
+}
+]
+ GET /auth/custom?error=session_expired 200 in 2486ms
+ GET /auth/custom?error=session_expired 200 in 2551ms
+ GET /auth/custom?error=session_expired 200 in 2554ms
+ GET /auth/custom?error=session_expired 200 in 2554ms
+ GET /auth/custom?error=session_expired 200 in 2556ms
+ GET /auth/custom?error=session_expired 200 in 2558ms
+ ✓ Compiled in 35.8s (1130 modules)
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '885f4614d0f0ec784c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '885f4614d0f0ec784c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '885f4614d0f0ec784c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '885f4614d0f0ec784c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '885f4614d0f0ec784c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '885f4614d0f0ec784c16d86b538b86e4be12854796d2c5ec'
+}
+]
+ ✓ Compiled in 20.2s (1130 modules)
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+ GET /auth/custom?error=session_expired 200 in 19751ms
+ GET /auth/custom?error=session_expired 200 in 21379ms
+ GET /auth/custom?error=session_expired 200 in 21443ms
+ GET /auth/custom?error=session_expired 200 in 21444ms
+ GET /auth/custom?error=session_expired 200 in 21608ms
+ GET /auth/custom?error=session_expired 200 in 21746ms
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2f19b753122574fa4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2f19b753122574fa4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2f19b753122574fa4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2f19b753122574fa4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2f19b753122574fa4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '2f19b753122574fa4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+ GET /dashboard/menu/view 200 in 6339ms
+ GET /auth/custom?error=session_expired 200 in 20906ms
+ GET /auth/custom?error=session_expired 200 in 30162ms
+ ✓ Compiled in 32.1s (1130 modules)
+ GET /auth/custom?error=session_expired 200 in 33753ms
+ GET /auth/custom?error=session_expired 200 in 33786ms
+ GET /auth/custom?error=session_expired 200 in 33868ms
+ GET /auth/custom?error=session_expired 200 in 34058ms
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '5728bb999073c97a4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '5728bb999073c97a4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '5728bb999073c97a4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '5728bb999073c97a4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '5728bb999073c97a4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+MIDDLEWARE URL: /auth/custom
+MIDDLEWARE COOKIES: [
+  {
+  name: '__next_hmr_refresh_hash__',
+  value: '5728bb999073c97a4c16d86b538b86e4be12854796d2c5ec'
+}
+]
+ GET /auth/custom?error=session_expired 200 in 7300ms
+ GET /auth/custom?error=session_expired 200 in 7371ms
+ GET /auth/custom?error=session_expired 200 in 7368ms
+ GET /auth/custom?error=session_expired 200 in 7373ms
+ GET /auth/custom?error=session_expired 200 in 7377ms
+ GET /auth/custom?error=session_expired 200 in 7373ms
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+ GET /dashboard/menu/view 200 in 9403ms
+ GET /dashboard/menu/view 200 in 8251ms
+MIDDLEWARE URL: /api/notifications
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/profile
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/profile
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/menu-editor/addon-groups
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/categories
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/profile/zones
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+ ○ Compiling /api/profile/zones ...
+MIDDLEWARE URL: /api/profile
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/profile
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/menu-editor/addon-groups
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/categories
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/profile/zones
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /api/profile
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+ GET /api/notifications 200 in 293836ms
+MIDDLEWARE URL: /dashboard/menu/view
+MIDDLEWARE COOKIES: [
+  {
+  name: 'kravy_auth_token',
+  value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWNmNWRlMTM2NWFhY2VhYTU4ZTI1ZDMiLCJpYXQiOjE3ODkzNjQyNjYsImV4cCI6MTc4OTQ1MDY2Nn0.eny_dTwa7yB6EBpRZOZDaSQTiOYSZ12uvN7j6FcTxfY'
+}
+]
+ ✓ Compiled /api/categories in 290.8s (2366 modules)
+ ✓ Compiled in 847ms (1281 modules)
+ ✓ Compiled in 999ms (1130 modules)
+ ✓ Compiled in 3.9s (2402 modules)
+ ✓ Compiled in 1556ms (2402 modules)
+ ✓ Compiled in 684ms (1130 modules)
+ ✓ Compiled in 423ms (1130 modules)
+ ✓ Compiled in 1061ms (2402 modules)
+ ✓ Compiled in 640ms (1130 modules)
+ ✓ Compiled in 1070ms (2402 modules)
+ ✓ Compiled in 923ms (2402 modules)
+ ✓ Compiled in 616ms (1130 modules)
+ ✓ Compiled in 1342ms (2402 modules)
+ ✓ Compiled in 864ms (2402 modules)
+ ✓ Compiled in 808ms (1130 modules)
+ ✓ Compiled in 436ms (1130 modules)
+ ✓ Compiled in 1251ms (2402 modules)
+ ✓ Compiled in 751ms (2402 modules)
+ ✓ Compiled in 1058ms (1130 modules)
+ ✓ Compiled in 1299ms (2402 modules)
+ ✓ Compiled in 1023ms (2402 modules)
+ ✓ Compiled in 884ms (1130 modules)
+ ✓ Compiled in 459ms (1130 modules)
+ ✓ Compiled in 596ms (1130 modules)
+ ✓ Compiled in 1077ms (2402 modules)
+ ✓ Compiled in 764ms (2402 modules)
+ ✓ Compiled in 589ms (1130 modules)
+ ✓ Compiled in 665ms (1130 modules)
+ ✓ Compiled in 473ms (1130 modules)
+ ✓ Compiled in 503ms (1130 modules)
+ ✓ Compiled in 1011ms (1130 modules)
+ ✓ Compiled in 1615ms (2402 modules)
+ ✓ Compiled in 672ms (1130 modules)
+ ✓ Compiled in 631ms (1130 modules)
+ ✓ Compiled in 1071ms (2402 modules)
+ ✓ Compiled in 695ms (1130 modules)
+ ✓ Compiled in 403ms (1130 modules)
+ ✓ Compiled in 887ms (1130 modules)
+ ✓ Compiled in 1326ms (2402 modules)
+ ✓ Compiled in 594ms (1130 modules)
+ ✓ Compiled in 461ms (1130 modules)
+ ✓ Compiled in 1299ms (1130 modules)
+ ✓ Compiled in 1013ms (2402 modules)
+ ✓ Compiled in 463ms (1130 modules)
+ ✓ Compiled in 932ms (2402 modules)
+ ✓ Compiled /_not-found in 332ms (2241 modules)
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 655ms (2284 modules)
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ GET /_next/static/webpack/webpack.a1c1c4937df78b64.hot-update.js 500 in 1186ms
+ GET /_next/static/webpack/webpack.a1c1c4937df78b64.hot-update.js 500 in 774ms
+ GET /_next/static/webpack/app/layout.a1c1c4937df78b64.hot-update.js 500 in 1208ms
+ GET /_next/static/webpack/app/layout.a1c1c4937df78b64.hot-update.js 500 in 775ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ GET /auth/custom 404 in 2ms
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ GET /_next/static/chunks/fallback/webpack.js 500 in 140ms
+ GET /_next/static/chunks/fallback/webpack.js 500 in 75ms
+ GET /_next/static/chunks/fallback/main.js 500 in 142ms
+ GET /_next/static/chunks/fallback/main.js 500 in 77ms
+ GET /_next/static/chunks/fallback/react-refresh.js 500 in 142ms
+ GET /_next/static/chunks/fallback/react-refresh.js 500 in 77ms
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ⨯ [Error: Cannot find module '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/pages/_document.js'
+Require stack:
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/require.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/load-components.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/utils.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/options.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/swc/index.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/router-server.js
+- /Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ GET /_next/static/chunks/fallback/pages/_app.js 500 in 85ms
+ GET /_next/static/chunks/fallback/pages/_app.js 500 in 45ms
+ GET /_next/static/chunks/fallback/pages/_error.js 500 in 84ms
+ GET /_next/static/chunks/fallback/pages/_error.js 500 in 45ms
+ ✓ Compiled /favicon.ico in 201ms (1180 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'] {
+  errno: -2,
+  syscall: 'open',
+  code: 'ENOENT',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/middleware-manifest.json'
+}
+ GET /favicon.ico 500 in 238ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/4.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/4.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/4.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/4.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/4.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/4.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/1.pack.gz'
+ ✓ Compiled in 489ms (1130 modules)
+ ✓ Compiled in 1381ms (2404 modules)
+ ⨯ ./src/app/dashboard/menu/view/page.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+      ,-[[36;1;4m/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/src/app/dashboard/menu/view/page.tsx[0m:2061:1]
+ [2m2058[0m |   if (error) return <p className="p-6 text-center text-red-600">Error: {error}</p>;
+ [2m2059[0m | 
+ [2m2060[0m |   return (
+ [2m2061[0m |     <div className="h-[calc(100vh-72px)] bg-[var(--kravy-bg)] flex flex-col -m-4 sm:-m-6 lg:-m-8 overflow-hidden transition-colors duration-300">
+      : [35;1m     ^^^[0m
+ [2m2062[0m |       <div className="flex-shrink-0 z-40 bg-[var(--kravy-navbar-bg)] backdrop-blur-md border-b border-[var(--kravy-border)] transition-all">
+ [2m2063[0m |         <div className="w-full">
+ [2m2064[0m |           {isAdmin && (
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/app/dashboard/menu/view/page.tsx
+ ✓ Compiled in 598ms (1112 modules)
+ ✓ Compiled in 656ms (1112 modules)
+ ✓ Compiled in 901ms (1112 modules)
+ ✓ Compiled in 628ms (1112 modules)
+ ✓ Compiled in 1707ms (2402 modules)
+ ✓ Compiled in 557ms (1130 modules)
+ ✓ Compiled in 1270ms (2404 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+ ✓ Compiled in 6.7s (2402 modules)
+ ✓ Compiled in 898ms (1130 modules)
+ ✓ Compiled in 702ms (1130 modules)
+ ✓ Compiled in 2.3s (2402 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 1486ms (2404 modules)
+ ✓ Compiled in 1463ms (1131 modules)
+ ✓ Compiled in 617ms (1131 modules)
+ ✓ Compiled in 1430ms (2402 modules)
+ ✓ Compiled in 1417ms (2404 modules)
+ ✓ Compiled in 603ms (1131 modules)
+ ✓ Compiled in 1479ms (2402 modules)
+ ✓ Compiled in 1355ms (2404 modules)
+ ✓ Compiled in 1418ms (2402 modules)
+ ✓ Compiled in 1999ms (2404 modules)
+ ✓ Compiled in 924ms (1131 modules)
+ ✓ Compiled in 1406ms (2402 modules)
+ ✓ Compiled in 1085ms (2402 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 748ms (1130 modules)
+ ✓ Compiled in 1106ms (2404 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/edge-server-development/0.pack.gz'
+ ✓ Compiled in 1441ms (2402 modules)
+ ✓ Compiled in 1457ms (2404 modules)
+ ✓ Compiled in 1602ms (2402 modules)
+ ✓ Compiled in 396ms (1130 modules)
+ ✓ Compiled in 1757ms (2402 modules)
+ ✓ Compiled in 2s (2404 modules)
+ ✓ Compiled in 857ms (1131 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+ ✓ Compiled in 1618ms (2402 modules)
+ ✓ Compiled in 1501ms (2404 modules)
+ ✓ Compiled in 1300ms (1131 modules)
+ ✓ Compiled in 804ms (1131 modules)
+ ✓ Compiled in 2.2s (2402 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 1255ms (2402 modules)
+ ✓ Compiled in 980ms (1130 modules)
+ ✓ Compiled in 783ms (1130 modules)
+ ✓ Compiled in 2s (1130 modules)
+ ✓ Compiled in 792ms (1130 modules)
+ ✓ Compiled in 842ms (1130 modules)
+ ✓ Compiled in 1618ms (2402 modules)
+ ✓ Compiled in 1149ms (2402 modules)
+ ✓ Compiled in 1221ms (2402 modules)
+ ✓ Compiled in 1622ms (2404 modules)
+ ✓ Compiled in 1340ms (2404 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+ ✓ Compiled in 1011ms (2404 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection:  [Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/cache/webpack/server-development/0.pack.gz'
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}

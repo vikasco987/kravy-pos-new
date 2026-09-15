@@ -1,0 +1,516 @@
+
+=== RUN CONFIG A ===
+Updated 2 paths from the index
+--- Iteration 1 of config A ---
+
+
+=== RUNNING SCENARIO: A-1 ===
+Killing old servers on 3001...
+Building...
+
+> kravy-pos@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.1.0) to ./node_modules/@prisma/client in 265ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want real-time updates to your database without manual polling? Discover how with Pulse: https://pris.ly/tip-0-pulse
+
+   ▲ Next.js 15.3.8
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 49s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/224) ...
+   Generating static pages (56/224) 
+   Generating static pages (112/224) 
+   Generating static pages (168/224) 
+ ✓ Generating static pages (224/224)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                               Size  First Load JS
+┌ ƒ /                                                    190 B         111 kB
+├ ○ /_not-found                                          990 B         103 kB
+├ ○ /admin/activity                                    7.65 kB         159 kB
+├ ○ /admin/dashboard                                   13.1 kB         262 kB
+├ ○ /admin/docs/architecture                           5.16 kB         151 kB
+├ ○ /admin/merchants                                   5.46 kB         160 kB
+├ ƒ /admin/merchants/[id]                              5.24 kB         266 kB
+├ ○ /admin/onboarding                                  2.95 kB         154 kB
+├ ○ /admin/onboarding-custom                            3.2 kB         154 kB
+├ ○ /admin/users                                       7.31 kB         159 kB
+├ ƒ /admin/users/[id]                                  13.1 kB         163 kB
+├ ○ /admin/users/create                                1.32 kB         103 kB
+├ ○ /admin/users/docs                                    188 B         106 kB
+├ ○ /admin/users/roles                                 3.28 kB         114 kB
+├ ƒ /api/activity/list                                   563 B         103 kB
+├ ƒ /api/activity/log                                    563 B         103 kB
+├ ƒ /api/admin                                           563 B         103 kB
+├ ƒ /api/admin/activity                                  563 B         103 kB
+├ ƒ /api/admin/app-settings                              563 B         103 kB
+├ ƒ /api/admin/backups                                   563 B         103 kB
+├ ƒ /api/admin/backups/collections                       563 B         103 kB
+├ ƒ /api/admin/backups/create                            563 B         103 kB
+├ ƒ /api/admin/backups/delete                            563 B         103 kB
+├ ƒ /api/admin/backups/download                          563 B         103 kB
+├ ƒ /api/admin/backups/export                            563 B         103 kB
+├ ƒ /api/admin/backups/inspect                           563 B         103 kB
+├ ƒ /api/admin/bills/delete-all                          563 B         103 kB
+├ ƒ /api/admin/combos                                    563 B         103 kB
+├ ƒ /api/admin/combos/[id]                               563 B         103 kB
+├ ƒ /api/admin/dashboard-stats                           563 B         103 kB
+├ ƒ /api/admin/dashboard-stats/config                    563 B         103 kB
+├ ƒ /api/admin/gallery                                   563 B         103 kB
+├ ƒ /api/admin/generate-invoice                          563 B         103 kB
+├ ƒ /api/admin/manual-invoices                           563 B         103 kB
+├ ƒ /api/admin/manual-invoices/[id]                      563 B         103 kB
+├ ƒ /api/admin/offers                                    563 B         103 kB
+├ ƒ /api/admin/offers/[id]                               563 B         103 kB
+├ ƒ /api/admin/onboard                                   563 B         103 kB
+├ ƒ /api/admin/onboard-custom                            563 B         103 kB
+├ ƒ /api/admin/reports/sellers                           563 B         103 kB
+├ ƒ /api/admin/reports/sellers/[id]                      563 B         103 kB
+├ ƒ /api/admin/reports/sellers/export                    563 B         103 kB
+├ ƒ /api/admin/rewards                                   563 B         103 kB
+├ ƒ /api/admin/rewards/[id]                              563 B         103 kB
+├ ƒ /api/admin/roles                                     563 B         103 kB
+├ ƒ /api/admin/self-promote                              563 B         103 kB
+├ ƒ /api/admin/seller-detail                             563 B         103 kB
+├ ƒ /api/admin/settings                                  563 B         103 kB
+├ ƒ /api/admin/users                                     563 B         103 kB
+├ ƒ /api/admin/users/[id]                                563 B         103 kB
+├ ƒ /api/admin/users/disable                             563 B         103 kB
+├ ƒ /api/admin/users/impersonate                         563 B         103 kB
+├ ƒ /api/admin/users/invite                              563 B         103 kB
+├ ƒ /api/admin/users/role                                563 B         103 kB
+├ ƒ /api/app-version                                     563 B         103 kB
+├ ƒ /api/auth/forgot-password                            563 B         103 kB
+├ ƒ /api/auth/login                                      563 B         103 kB
+├ ƒ /api/auth/logout                                     563 B         103 kB
+├ ƒ /api/auth/me                                         563 B         103 kB
+├ ƒ /api/auth/refresh-token                              563 B         103 kB
+├ ƒ /api/auth/register                                   563 B         103 kB
+├ ƒ /api/auth/resend-otp                                 563 B         103 kB
+├ ƒ /api/auth/reset-password                             563 B         103 kB
+├ ƒ /api/auth/sessions                                   563 B         103 kB
+├ ƒ /api/auth/sessions/remove                            563 B         103 kB
+├ ƒ /api/auth/sessions/revoke                            563 B         103 kB
+├ ƒ /api/auth/sync-user                                  563 B         103 kB
+├ ƒ /api/auth/verify-otp                                 563 B         103 kB
+├ ƒ /api/backup                                          563 B         103 kB
+├ ƒ /api/backup/cron                                     563 B         103 kB
+├ ƒ /api/bill-manager                                    563 B         103 kB
+├ ƒ /api/bill-manager/[id]                               563 B         103 kB
+├ ƒ /api/bill-manager/[id]/hold                          563 B         103 kB
+├ ƒ /api/bill-manager/[id]/pay                           563 B         103 kB
+├ ƒ /api/bill-manager/[id]/pdf                           563 B         103 kB
+├ ƒ /api/bill-manager/deleted/list                       563 B         103 kB
+├ ƒ /api/bill-manager/deleted/restore/[id]               563 B         103 kB
+├ ƒ /api/bill-manager/export                             563 B         103 kB
+├ ƒ /api/categories                                      563 B         103 kB
+├ ƒ /api/categories/ensure                               563 B         103 kB
+├ ƒ /api/categories/order                                563 B         103 kB
+├ ƒ /api/categories/upload                               563 B         103 kB
+├ ƒ /api/clerks                                          563 B         103 kB
+├ ƒ /api/combos-offers                                   563 B         103 kB
+├ ƒ /api/cron/backup                                     563 B         103 kB
+├ ƒ /api/dashboard                                       563 B         103 kB
+├ ƒ /api/dashboard/business-profile/google-review-url    563 B         103 kB
+├ ƒ /api/dashboard/google-review-qr                      563 B         103 kB
+├ ƒ /api/dashboard/google-review-qr/import               563 B         103 kB
+├ ƒ /api/debug                                           563 B         103 kB
+├ ƒ /api/debug-cloudinary                                563 B         103 kB
+├ ƒ /api/discounts                                       563 B         103 kB
+├ ƒ /api/discounts/[id]                                  563 B         103 kB
+├ ƒ /api/expenses                                        563 B         103 kB
+├ ƒ /api/expenses/[id]                                   563 B         103 kB
+├ ƒ /api/expenses/categories                             563 B         103 kB
+├ ƒ /api/expenses/categories/[id]                        563 B         103 kB
+├ ƒ /api/external-sales                                  563 B         103 kB
+├ ƒ /api/external/menu/[userId]                          563 B         103 kB
+├ ƒ /api/external/menu/update/[id]                       563 B         103 kB
+├ ƒ /api/external/users                                  563 B         103 kB
+├ ƒ /api/fuel-bills                                      563 B         103 kB
+├ ƒ /api/gmail/auth                                      563 B         103 kB
+├ ƒ /api/gmail/callback                                  563 B         103 kB
+├ ƒ /api/gmail/status                                    563 B         103 kB
+├ ƒ /api/gmail/sync                                      563 B         103 kB
+├ ƒ /api/gmail/test-parse                                563 B         103 kB
+├ ƒ /api/inventory                                       563 B         103 kB
+├ ƒ /api/inventory/export                                563 B         103 kB
+├ ƒ /api/inventory/materials                             563 B         103 kB
+├ ƒ /api/inventory/recipes                               563 B         103 kB
+├ ƒ /api/invoice/[id]                                    563 B         103 kB
+├ ƒ /api/items                                           563 B         103 kB
+├ ƒ /api/items/clear-images                              563 B         103 kB
+├ ƒ /api/menu-editor/addon-groups                        563 B         103 kB
+├ ƒ /api/menu/delete                                     563 B         103 kB
+├ ƒ /api/menu/get-keys                                   563 B         103 kB
+├ ƒ /api/menu/items                                      563 B         103 kB
+├ ƒ /api/menu/post-process                               563 B         103 kB
+├ ƒ /api/menu/update                                     563 B         103 kB
+├ ƒ /api/menu/upload-ocr                                 563 B         103 kB
+├ ƒ /api/menu/view                                       563 B         103 kB
+├ ƒ /api/merchant/onboard                                563 B         103 kB
+├ ƒ /api/notifications                                   563 B         103 kB
+├ ƒ /api/orders                                          563 B         103 kB
+├ ƒ /api/orders/[orderId]                                563 B         103 kB
+├ ƒ /api/orders/[orderId]/merge-items                    563 B         103 kB
+├ ƒ /api/orders/reserve-token                            563 B         103 kB
+├ ƒ /api/parties                                         563 B         103 kB
+├ ƒ /api/parties/[id]                                    563 B         103 kB
+├ ƒ /api/parties/[id]/bills                              563 B         103 kB
+├ ƒ /api/payments                                        563 B         103 kB
+├ ƒ /api/phonepe/pay                                     563 B         103 kB
+├ ƒ /api/phonepe/status/[id]                             563 B         103 kB
+├ ƒ /api/phonepe/webhook                                 563 B         103 kB
+├ ƒ /api/profile                                         563 B         103 kB
+├ ƒ /api/profile/push-token                              563 B         103 kB
+├ ƒ /api/profile/zones                                   563 B         103 kB
+├ ƒ /api/profiles                                        563 B         103 kB
+├ ƒ /api/proxy/google-image-search                       563 B         103 kB
+├ ƒ /api/proxy/image-search                              563 B         103 kB
+├ ƒ /api/public/gallery/[clerkId]                        563 B         103 kB
+├ ƒ /api/public/loyalty                                  563 B         103 kB
+├ ƒ /api/public/menu                                     563 B         103 kB
+├ ƒ /api/public/menu/[clerkId]                           563 B         103 kB
+├ ƒ /api/public/orders                                   563 B         103 kB
+├ ƒ /api/public/orders/[orderId]/combined-bill           563 B         103 kB
+├ ƒ /api/public/orders/track                             563 B         103 kB
+├ ƒ /api/public/pos/[identifier]                         563 B         103 kB
+├ ƒ /api/public/profile                                  563 B         103 kB
+├ ƒ /api/public/reviews                                  563 B         103 kB
+├ ƒ /api/quotation/generate                              563 B         103 kB
+├ ƒ /api/reports/gst                                     563 B         103 kB
+├ ƒ /api/reports/sales/drilldown                         563 B         103 kB
+├ ƒ /api/reports/tokens                                  563 B         103 kB
+├ ƒ /api/reviews                                         563 B         103 kB
+├ ƒ /api/rooms                                           563 B         103 kB
+├ ƒ /api/rooms/bookings                                  563 B         103 kB
+├ ƒ /api/search                                          563 B         103 kB
+├ ƒ /api/seller/staff                                    563 B         103 kB
+├ ƒ /api/staff                                           563 B         103 kB
+├ ƒ /api/staff/[id]                                      563 B         103 kB
+├ ƒ /api/staff/login                                     563 B         103 kB
+├ ƒ /api/staff/logout                                    563 B         103 kB
+├ ƒ /api/staff/me                                        563 B         103 kB
+├ ƒ /api/staff/refresh-token                             563 B         103 kB
+├ ƒ /api/store-items/bulk                                563 B         103 kB
+├ ƒ /api/store-items/bulk-update                         563 B         103 kB
+├ ƒ /api/subscription/confirm                            563 B         103 kB
+├ ƒ /api/tables                                          563 B         103 kB
+├ ƒ /api/tables/[id]                                     563 B         103 kB
+├ ƒ /api/test_customers                                  563 B         103 kB
+├ ƒ /api/test/token-refresh                              563 B         103 kB
+├ ƒ /api/update-token                                    563 B         103 kB
+├ ƒ /api/upload                                          563 B         103 kB
+├ ƒ /api/upload-image                                    563 B         103 kB
+├ ƒ /api/upload/image                                    563 B         103 kB
+├ ƒ /api/user/activity                                   563 B         103 kB
+├ ƒ /api/user/identifiers                                563 B         103 kB
+├ ƒ /api/user/me                                         563 B         103 kB
+├ ƒ /api/user/preferences                                563 B         103 kB
+├ ƒ /api/user/sync                                       563 B         103 kB
+├ ƒ /api/wallet                                          563 B         103 kB
+├ ƒ /api/wallet/history/[partyId]                        563 B         103 kB
+├ ƒ /api/whatsapp/send-bill                              563 B         103 kB
+├ ○ /auth/custom                                       5.18 kB         116 kB
+├ ○ /checkout                                          20.4 kB         133 kB
+├ ƒ /dashboard                                         15.9 kB         295 kB
+├ ○ /dashboard/admin/app-settings                      2.59 kB         105 kB
+├ ○ /dashboard/admin/invoice-generator                 12.9 kB         115 kB
+├ ○ /dashboard/admin/qr-manager                        33.8 kB         346 kB
+├ ○ /dashboard/admin/website-qr                        4.73 kB         128 kB
+├ ○ /dashboard/ai-scraper                              11.1 kB         153 kB
+├ ○ /dashboard/auto-apply                              10.1 kB         255 kB
+├ ○ /dashboard/backup                                  8.47 kB         151 kB
+├ ○ /dashboard/billing                                 21.3 kB         173 kB
+├ ƒ /dashboard/billing/[id]                            9.54 kB         139 kB
+├ ○ /dashboard/billing/checkout                        38.5 kB         232 kB
+├ ○ /dashboard/billing/deleted                         4.46 kB         150 kB
+├ ○ /dashboard/combos                                  9.52 kB         185 kB
+├ ○ /dashboard/discounts                               8.74 kB         160 kB
+├ ○ /dashboard/docs/auto-backup                        8.63 kB         151 kB
+├ ○ /dashboard/docs/gst-billing                         4.7 kB         147 kB
+├ ○ /dashboard/docs/gst-category-pro                   4.06 kB         146 kB
+├ ○ /dashboard/docs/menu-management                    4.89 kB         150 kB
+├ ○ /dashboard/docs/staff-access                       5.44 kB         147 kB
+├ ○ /dashboard/docs/staff-access/interactive             10 kB         152 kB
+├ ○ /dashboard/docs/workflow                              9 kB         151 kB
+├ ○ /dashboard/expenses                                8.17 kB         164 kB
+├ ○ /dashboard/expenses/pnl                            6.04 kB         266 kB
+├ ○ /dashboard/expenses/reports                        7.65 kB         274 kB
+├ ○ /dashboard/fuel                                    11.5 kB         160 kB
+├ ○ /dashboard/gallery                                 6.89 kB         161 kB
+├ ○ /dashboard/help                                    5.15 kB         111 kB
+├ ○ /dashboard/integration/gmail                       12.6 kB         155 kB
+├ ○ /dashboard/inventory                                 30 kB         178 kB
+├ ○ /dashboard/inventory/reports                       4.64 kB         113 kB
+├ ○ /dashboard/kitchen                                 18.8 kB         209 kB
+├ ƒ /dashboard/menu-editor                             11.2 kB         170 kB
+├ ○ /dashboard/menu/addons                             10.6 kB         162 kB
+├ ○ /dashboard/menu/edit                               6.78 kB         172 kB
+├ ○ /dashboard/menu/pdf                                9.66 kB         118 kB
+├ ○ /dashboard/menu/upload                             10.8 kB         166 kB
+├ ○ /dashboard/menu/view                               27.5 kB         186 kB
+├ ○ /dashboard/offers                                  9.65 kB         188 kB
+├ ○ /dashboard/offers/generator                        11.3 kB         143 kB
+├ ○ /dashboard/offers/reviews                          10.3 kB         148 kB
+├ ○ /dashboard/parties                                 15.7 kB         164 kB
+├ ○ /dashboard/parties/add                               909 B         103 kB
+├ ○ /dashboard/profile                                 7.92 kB         242 kB
+├ ○ /dashboard/profile/create                            934 B         186 kB
+├ ƒ /dashboard/profile/edit                              941 B         186 kB
+├ ○ /dashboard/qr-management                           17.7 kB         201 kB
+├ ƒ /dashboard/qr-management/print/[id]                3.83 kB         123 kB
+├ ○ /dashboard/qr-orders                               8.32 kB         134 kB
+├ ○ /dashboard/quotation                               10.3 kB         112 kB
+├ ƒ /dashboard/reports/analytics                       2.27 kB         171 kB
+├ ƒ /dashboard/reports/analytics/order-type            4.68 kB         264 kB
+├ ƒ /dashboard/reports/bills                           2.27 kB         171 kB
+├ ƒ /dashboard/reports/customers                         188 B         106 kB
+├ ○ /dashboard/reports/gst                             13.9 kB         212 kB
+├ ○ /dashboard/reports/gst/dashboard                   11.5 kB         311 kB
+├ ƒ /dashboard/reports/items                           4.76 kB         173 kB
+├ ƒ /dashboard/reports/payments                        2.27 kB         171 kB
+├ ƒ /dashboard/reports/payments/cash                   2.27 kB         171 kB
+├ ƒ /dashboard/reports/payments/upi                    2.27 kB         171 kB
+├ ƒ /dashboard/reports/performance                       188 B         106 kB
+├ ƒ /dashboard/reports/sales/daily                       366 B         156 kB
+├ ƒ /dashboard/reports/sales/drilldown                 11.5 kB         204 kB
+├ ƒ /dashboard/reports/sales/monthly                     366 B         156 kB
+├ ƒ /dashboard/reports/sales/revenue                   2.27 kB         171 kB
+├ ƒ /dashboard/reports/sales/weekly                      188 B         106 kB
+├ ○ /dashboard/reports/tokens                          9.67 kB         152 kB
+├ ƒ /dashboard/reports/unpaid                          18.1 kB         201 kB
+├ ƒ /dashboard/reports/wallet-deposits                 13.5 kB         156 kB
+├ ○ /dashboard/rewards                                 7.43 kB         183 kB
+├ ○ /dashboard/rooms                                   9.36 kB         158 kB
+├ ○ /dashboard/rooms/reports                           4.51 kB         110 kB
+├ ○ /dashboard/security                                4.06 kB         106 kB
+├ ○ /dashboard/settings                                5.07 kB         150 kB
+├ ○ /dashboard/settings/account                        11.8 kB         154 kB
+├ ○ /dashboard/settings/activity                         777 B         103 kB
+├ ○ /dashboard/settings/activity/admin                   768 B         103 kB
+├ ○ /dashboard/settings/advanced                       4.17 kB         112 kB
+├ ○ /dashboard/settings/backup                         9.22 kB         111 kB
+├ ○ /dashboard/settings/customer                       11.6 kB         117 kB
+├ ○ /dashboard/settings/inventory                      8.53 kB         154 kB
+├ ○ /dashboard/settings/loyalty                        6.85 kB         118 kB
+├ ○ /dashboard/settings/notifications                  9.79 kB         115 kB
+├ ○ /dashboard/settings/pos                            10.9 kB         116 kB
+├ ○ /dashboard/settings/printing                       14.6 kB         181 kB
+├ ○ /dashboard/settings/sessions                       5.19 kB         123 kB
+├ ○ /dashboard/settings/sidebar                        6.89 kB         120 kB
+├ ○ /dashboard/settings/tax                            9.13 kB         158 kB
+├ ○ /dashboard/staff                                   15.2 kB         157 kB
+├ ○ /dashboard/store-item-upload                       17.8 kB         160 kB
+├ ○ /dashboard/tables                                  11.2 kB         180 kB
+├ ○ /dashboard/terminal                                  26 kB         219 kB
+├ ○ /dashboard/workflow                                  25 kB         193 kB
+├ ○ /deleted-bills                                     3.63 kB         146 kB
+├ ○ /demo                                              8.55 kB         151 kB
+├ ƒ /menu/[clerkId]                                    34.2 kB         194 kB
+├ ƒ /order-tracking/[orderId]                          14.3 kB         174 kB
+├ ƒ /payment/result/[id]                               3.21 kB         149 kB
+├ ƒ /public/ledger/[partyId]                             563 B         103 kB
+├ ○ /qr-menu                                           8.57 kB         180 kB
+├ ƒ /qr/[code]                                           563 B         103 kB
+├ ƒ /review/[orderId]                                  7.06 kB         127 kB
+├ ○ /staff/login                                          8 kB         150 kB
+├ ○ /store-item-upload                                   563 B         103 kB
+├ ○ /test/qz                                           2.96 kB         114 kB
+├ ○ /track                                             6.32 kB         157 kB
+└ ○ /upgrade                                           4.69 kB         150 kB
++ First Load JS shared by all                           102 kB
+  ├ chunks/1684-23dc285c52887576.js                    46.6 kB
+  ├ chunks/4bd1b696-e71b66d225d8e45f.js                53.2 kB
+  └ other shared chunks (total)                        2.18 kB
+
+
+ƒ Middleware                                           31.7 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Starting Server...
+Running Playwright Benchmark...
+=== STRICT BENCHMARK: A-1 ===
+Running iteration 1...
+Navigating to page...
+>> GET http://localhost:3001/dashboard/menu/view
+>> GET http://localhost:3001/_next/static/media/e4af272ccee01ff0-s.p.woff2
+>> GET http://localhost:3001/_next/static/css/45079e0a57e524ee.css
+>> GET http://localhost:3001/_next/static/css/47f3de3c41ad536b.css
+>> GET http://localhost:3001/_next/static/css/3af04494612e9fab.css
+>> GET http://localhost:3001/_next/static/chunks/webpack-6fc1f9282f6d0e53.js
+>> GET http://localhost:3001/_next/static/chunks/4bd1b696-e71b66d225d8e45f.js
+>> GET http://localhost:3001/_next/static/chunks/1684-23dc285c52887576.js
+>> GET http://localhost:3001/_next/static/chunks/main-app-15f8366be760b6fd.js
+>> GET http://localhost:3001/_next/static/chunks/4521-3ce0632c81905e73.js
+>> GET http://localhost:3001/_next/static/chunks/6671-2c59fdb17d65f45d.js
+>> GET http://localhost:3001/_next/static/chunks/app/layout-c61016ad7b8a610f.js
+>> GET http://localhost:3001/_next/static/chunks/app/error-b72f84e42a584e31.js
+>> GET http://localhost:3001/_next/static/chunks/4493-56a77b934a3f9e02.js
+>> GET http://localhost:3001/_next/static/chunks/5430-2533ed21105f9380.js
+>> GET http://localhost:3001/_next/static/chunks/1906-df48f4ff2ab5abdc.js
+>> GET http://localhost:3001/_next/static/chunks/6996-9eaff41893d9fabd.js
+>> GET http://localhost:3001/_next/static/chunks/980-5d9864478dbc009e.js
+>> GET http://localhost:3001/_next/static/chunks/2609-807dfa739acc9e04.js
+>> GET http://localhost:3001/_next/static/chunks/app/dashboard/layout-f617e13a56e6a2df.js
+>> GET http://localhost:3001/_next/static/chunks/2010-72b0f30111c46eb2.js
+>> GET http://localhost:3001/_next/static/chunks/3063-204cbd4bc32934ab.js
+>> GET http://localhost:3001/_next/static/chunks/4244-bf9ae61a055766c4.js
+>> GET http://localhost:3001/_next/static/chunks/5059-26a1e9826782b476.js
+>> GET http://localhost:3001/_next/static/chunks/app/dashboard/menu/view/page-97fa30a3743f2f0d.js
+>> GET http://localhost:3001/_next/static/chunks/app/global-error-07379679dbd81aac.js
+Waiting for list to render...
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/notifications
+[MOCK] GET http://localhost:3001/api/notifications -> 200
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/api/menu-editor/addon-groups
+>> GET http://localhost:3001/api/menu/view?t=1789460724582
+[MOCK] Intercepted /api/menu/view
+>> GET http://localhost:3001/api/categories?t=1789460724582
+>> GET http://localhost:3001/api/profile/zones
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/kravylogo.png
+>> GET http://localhost:3001/_next/static/media/8e9860b6e62d6359-s.woff2
+Page is ready. Testing typing responsiveness...
+Before result count: 9
+After result count: 1
+Matching card text: PIZZA 1
+Iteration 1 Results:
+  - P Latency: 309.40 ms
+  - PIZZA 1 Latency: 9.80 ms
+  - Avg Responsiveness: 152.59 ms (Min: 9.80, Max: 309.40)
+  - Final Search Latency (incl debounce): 257 ms
+  - DOM Nodes: 331 (Visible Cards: 0)
+Running iteration 2...
+Navigating to page...
+>> GET http://localhost:3001/dashboard/menu/view
+>> GET http://localhost:3001/_next/static/media/e4af272ccee01ff0-s.p.woff2
+>> GET http://localhost:3001/_next/static/css/45079e0a57e524ee.css
+>> GET http://localhost:3001/_next/static/css/47f3de3c41ad536b.css
+>> GET http://localhost:3001/_next/static/css/3af04494612e9fab.css
+>> GET http://localhost:3001/_next/static/chunks/webpack-6fc1f9282f6d0e53.js
+>> GET http://localhost:3001/_next/static/chunks/4bd1b696-e71b66d225d8e45f.js
+>> GET http://localhost:3001/_next/static/chunks/1684-23dc285c52887576.js
+>> GET http://localhost:3001/_next/static/chunks/main-app-15f8366be760b6fd.js
+>> GET http://localhost:3001/_next/static/chunks/4521-3ce0632c81905e73.js
+>> GET http://localhost:3001/_next/static/chunks/6671-2c59fdb17d65f45d.js
+>> GET http://localhost:3001/_next/static/chunks/app/layout-c61016ad7b8a610f.js
+>> GET http://localhost:3001/_next/static/chunks/app/error-b72f84e42a584e31.js
+>> GET http://localhost:3001/_next/static/chunks/4493-56a77b934a3f9e02.js
+>> GET http://localhost:3001/_next/static/chunks/5430-2533ed21105f9380.js
+Waiting for list to render...
+>> GET http://localhost:3001/_next/static/chunks/1906-df48f4ff2ab5abdc.js
+>> GET http://localhost:3001/_next/static/chunks/6996-9eaff41893d9fabd.js
+>> GET http://localhost:3001/_next/static/chunks/980-5d9864478dbc009e.js
+>> GET http://localhost:3001/_next/static/chunks/2609-807dfa739acc9e04.js
+>> GET http://localhost:3001/_next/static/chunks/app/dashboard/layout-f617e13a56e6a2df.js
+>> GET http://localhost:3001/_next/static/chunks/2010-72b0f30111c46eb2.js
+>> GET http://localhost:3001/_next/static/chunks/3063-204cbd4bc32934ab.js
+>> GET http://localhost:3001/_next/static/chunks/4244-bf9ae61a055766c4.js
+>> GET http://localhost:3001/_next/static/chunks/5059-26a1e9826782b476.js
+>> GET http://localhost:3001/_next/static/chunks/app/dashboard/menu/view/page-97fa30a3743f2f0d.js
+>> GET http://localhost:3001/_next/static/chunks/app/global-error-07379679dbd81aac.js
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/notifications
+[MOCK] GET http://localhost:3001/api/notifications -> 200
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/kravylogo.png
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/api/menu-editor/addon-groups
+>> GET http://localhost:3001/api/menu/view?t=1789460740577
+[MOCK] Intercepted /api/menu/view
+>> GET http://localhost:3001/api/categories?t=1789460740577
+>> GET http://localhost:3001/api/profile/zones
+>> GET http://localhost:3001/_next/static/media/8e9860b6e62d6359-s.woff2
+Page is ready. Testing typing responsiveness...
+Before result count: 9
+After result count: 1
+Matching card text: PIZZA 1
+>> GET http://localhost:3001/api/notifications
+[MOCK] GET http://localhost:3001/api/notifications -> 200
+Iteration 2 Results:
+  - P Latency: 488.20 ms
+  - PIZZA 1 Latency: 29.70 ms
+  - Avg Responsiveness: 208.90 ms (Min: 21.90, Max: 488.20)
+  - Final Search Latency (incl debounce): 936 ms
+  - DOM Nodes: 333 (Visible Cards: 0)
+Running iteration 3...
+Navigating to page...
+>> GET http://localhost:3001/dashboard/menu/view
+>> GET http://localhost:3001/_next/static/media/e4af272ccee01ff0-s.p.woff2
+>> GET http://localhost:3001/_next/static/css/45079e0a57e524ee.css
+>> GET http://localhost:3001/_next/static/css/47f3de3c41ad536b.css
+>> GET http://localhost:3001/_next/static/css/3af04494612e9fab.css
+>> GET http://localhost:3001/_next/static/chunks/webpack-6fc1f9282f6d0e53.js
+>> GET http://localhost:3001/_next/static/chunks/4bd1b696-e71b66d225d8e45f.js
+>> GET http://localhost:3001/_next/static/chunks/1684-23dc285c52887576.js
+>> GET http://localhost:3001/_next/static/chunks/main-app-15f8366be760b6fd.js
+>> GET http://localhost:3001/_next/static/chunks/4521-3ce0632c81905e73.js
+>> GET http://localhost:3001/_next/static/chunks/6671-2c59fdb17d65f45d.js
+>> GET http://localhost:3001/_next/static/chunks/app/layout-c61016ad7b8a610f.js
+>> GET http://localhost:3001/_next/static/chunks/app/error-b72f84e42a584e31.js
+>> GET http://localhost:3001/_next/static/chunks/4493-56a77b934a3f9e02.js
+>> GET http://localhost:3001/_next/static/chunks/5430-2533ed21105f9380.js
+>> GET http://localhost:3001/_next/static/chunks/1906-df48f4ff2ab5abdc.js
+>> GET http://localhost:3001/_next/static/chunks/6996-9eaff41893d9fabd.js
+>> GET http://localhost:3001/_next/static/chunks/980-5d9864478dbc009e.js
+>> GET http://localhost:3001/_next/static/chunks/2609-807dfa739acc9e04.js
+>> GET http://localhost:3001/_next/static/chunks/app/dashboard/layout-f617e13a56e6a2df.js
+>> GET http://localhost:3001/_next/static/chunks/2010-72b0f30111c46eb2.js
+>> GET http://localhost:3001/_next/static/chunks/3063-204cbd4bc32934ab.js
+>> GET http://localhost:3001/_next/static/chunks/4244-bf9ae61a055766c4.js
+>> GET http://localhost:3001/_next/static/chunks/5059-26a1e9826782b476.js
+>> GET http://localhost:3001/_next/static/chunks/app/dashboard/menu/view/page-97fa30a3743f2f0d.js
+>> GET http://localhost:3001/_next/static/chunks/app/global-error-07379679dbd81aac.js
+Waiting for list to render...
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/notifications
+[MOCK] GET http://localhost:3001/api/notifications -> 200
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/api/user/me
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/api/menu-editor/addon-groups
+>> GET http://localhost:3001/api/menu/view?t=1789460759720
+[MOCK] Intercepted /api/menu/view
+>> GET http://localhost:3001/api/categories?t=1789460759720
+>> GET http://localhost:3001/api/profile/zones
+>> GET http://localhost:3001/api/profile
+>> GET http://localhost:3001/kravylogo.png
+>> GET http://localhost:3001/_next/static/media/8e9860b6e62d6359-s.woff2
+Page is ready. Testing typing responsiveness...
+Before result count: 9
+After result count: 1
+Matching card text: PIZZA 1
+Iteration 3 Results:
+  - P Latency: 570.60 ms
+  - PIZZA 1 Latency: 29.50 ms
+  - Avg Responsiveness: 229.83 ms (Min: 21.60, Max: 570.60)
+  - Final Search Latency (incl debounce): 594 ms
+  - DOM Nodes: 329 (Visible Cards: 0)
+=== DONE ===
+
+Killing Server...
+Updated 2 paths from the index
+Updated 2 paths from the index
+=== ALL DONE ===

@@ -250,12 +250,11 @@ export default function FuelBillingPage() {
           
           <div class="text-left mb">
             ${businessName}<br>
-            ${profile.businessAddress ? profile.businessAddress.replace(/\n/g, '<br>') : '7 0<br>70'}<br>
-            ${profile.contactPersonPhone || "7894364780"}
+            ${profile.businessAddress ? profile.businessAddress.replace(/\n/g, '<br>') : '7 0<br>70'}
           </div>
           
           <div class="center" style="margin-top: 15px; margin-bottom: 5px;">
-            COPY / ORIGINAL
+            ORIGINAL
           </div>
           <div class="center" style="letter-spacing: 2px; margin-top: 5px; margin-bottom: 5px;">жжжжжжжжжжжжжжжжжж</div>
           

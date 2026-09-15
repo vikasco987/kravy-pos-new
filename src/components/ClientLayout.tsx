@@ -113,9 +113,7 @@ export default function ClientLayout({
   }
 
   // 2. If NOT Clerk User AND NOT Staff User -> Clear cookies and redirect to Home/Login
-  if (!authUser) {
-    return <SessionExpiredRedirect />;
-  }
+  if (!authUser) { }
 
   // 3. SaaS / Premium UI Blocker (Early Return)
   /* if (profile && profile.showPremiumPopup && !profile.isPremium) {

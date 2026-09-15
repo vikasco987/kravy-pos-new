@@ -1,0 +1,70 @@
+
+=== RUN CONFIG A ===
+Updated 0 paths from the index
+--- Iteration 1 of config A ---
+
+
+=== RUNNING SCENARIO: A-1 ===
+Killing old servers on 3001...
+kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]
+Building...
+
+> kravy-pos@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.1.0) to ./node_modules/@prisma/client in 2.47s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+   ▲ Next.js 15.3.8
+   - Environments: .env
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOSPC: no space left on device, write
+ ✓ Compiled successfully in 2.4min
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+
+> Build error occurred
+[Error: ENOSPC: no space left on device, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/functions-config-manifest.json'] {
+  errno: -28,
+  code: 'ENOSPC',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/server/functions-config-manifest.json'
+}
+Starting Server...
+Running Playwright Benchmark...
+=== STRICT BENCHMARK: A-1 ===
+Running iteration 1...
+Navigating to page...
+>> GET http://localhost:3001/dashboard/menu/view
+Iteration 1 failed: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3001/dashboard/menu/view
+Call log:
+  - navigating to "http://localhost:3001/dashboard/menu/view", waiting until "domcontentloaded"
+
+Running iteration 2...
+Navigating to page...
+>> GET http://localhost:3001/dashboard/menu/view
+Iteration 2 failed: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3001/dashboard/menu/view
+Call log:
+  - navigating to "http://localhost:3001/dashboard/menu/view", waiting until "domcontentloaded"
+
+Running iteration 3...
+Navigating to page...
+>> GET http://localhost:3001/dashboard/menu/view
+Iteration 3 failed: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3001/dashboard/menu/view
+Call log:
+  - navigating to "http://localhost:3001/dashboard/menu/view", waiting until "domcontentloaded"
+
+=== DONE ===
+
+Killing Server...
+Updated 2 paths from the index
+Updated 2 paths from the index
+=== ALL DONE ===

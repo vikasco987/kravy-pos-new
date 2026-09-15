@@ -1,0 +1,27 @@
+
+=== RUN CONFIG D ===
+Updated 0 paths from the index
+--- Iteration 1 of config D ---
+
+
+=== RUNNING SCENARIO: D-1 ===
+Killing old servers on 3001...
+kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]
+Building...
+
+> kravy-pos@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.1.0) to ./node_modules/@prisma/client in 473ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Curious about the SQL queries Prisma ORM generates? Optimize helps you enhance your visibility: https://pris.ly/tip-2-optimize
+
+   ▲ Next.js 15.3.8
+   - Environments: .env
+
+   Creating an optimized production build ...
