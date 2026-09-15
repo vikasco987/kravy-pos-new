@@ -1,0 +1,110 @@
+[
+  {
+    "metrics": {
+      "domNodes": 347,
+      "visibleCards": 0
+    },
+    "latencies": {
+      "P": {
+        "filterLatency": 29.19999999552965,
+        "rafLatency": 0
+      },
+      "PI": {
+        "filterLatency": 20,
+        "rafLatency": 0
+      },
+      "PIZ": {
+        "filterLatency": 14.700000002980232,
+        "rafLatency": 0
+      },
+      "PIZZ": {
+        "filterLatency": 18.899999998509884,
+        "rafLatency": 0
+      },
+      "PIZZA": {
+        "filterLatency": 13.899999998509884,
+        "rafLatency": 0
+      },
+      "PIZZA ": {
+        "filterLatency": 13.299999997019768,
+        "rafLatency": 0
+      },
+      "PIZZA 1": {
+        "filterLatency": 338,
+        "rafLatency": 0
+      }
+    }
+  },
+  {
+    "metrics": {
+      "domNodes": 347,
+      "visibleCards": 0
+    },
+    "latencies": {
+      "P": {
+        "filterLatency": 23.600000001490116,
+        "rafLatency": 0
+      },
+      "PI": {
+        "filterLatency": 15.399999998509884,
+        "rafLatency": 0
+      },
+      "PIZ": {
+        "filterLatency": 14.100000001490116,
+        "rafLatency": 0
+      },
+      "PIZZ": {
+        "filterLatency": 15.299999997019768,
+        "rafLatency": 0
+      },
+      "PIZZA": {
+        "filterLatency": 14.699999995529652,
+        "rafLatency": 0
+      },
+      "PIZZA ": {
+        "filterLatency": 27.899999998509884,
+        "rafLatency": 0
+      },
+      "PIZZA 1": {
+        "filterLatency": 345,
+        "rafLatency": 0
+      }
+    }
+  },
+  {
+    "metrics": {
+      "domNodes": 350,
+      "visibleCards": 0
+    },
+    "latencies": {
+      "P": {
+        "filterLatency": 23.5,
+        "rafLatency": 0
+      },
+      "PI": {
+        "filterLatency": 15.600000001490116,
+        "rafLatency": 0
+      },
+      "PIZ": {
+        "filterLatency": 13.5,
+        "rafLatency": 0
+      },
+      "PIZZ": {
+        "filterLatency": 12.600000001490116,
+        "rafLatency": 0
+      },
+      "PIZZA": {
+        "filterLatency": 11,
+        "rafLatency": 0
+      },
+      "PIZZA ": {
+        "filterLatency": 11.700000002980232,
+        "rafLatency": 0
+      },
+      "PIZZA 1": {
+        "filterLatency": 342,
+        "rafLatency": 0
+      }
+    }
+  }
+]

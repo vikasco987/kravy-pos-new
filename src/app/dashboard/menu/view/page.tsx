@@ -458,6 +458,7 @@ export default function ViewMenuPage() {
   // filters & UI
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebounce(query, 300);
   const [filterCategory, setFilterCategory] = useState<string | "all">("all");
   const [filterZone, setFilterZone] = useState<string | "all">("all");
   const [availableZones, setAvailableZones] = useState<string[]>(["MAIN KITCHEN", "BAR", "GRILL", "BAKERY", "COUNTER"]);
