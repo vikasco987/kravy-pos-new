@@ -430,9 +430,10 @@ export default function MenuEditPage() {
                                                         className="flex-1 bg-transparent border-none p-0 font-bold text-sm outline-none placeholder:text-gray-300"
                                                         placeholder="Group Name (e.g. Size)"
                                                         value={vGroup.name}
-                                                        onChange={(e) => {
                                                             const updated = [...formData.variants];
-                                                            updated[gIdx].name = e.target.value;
+                                                            const newGroup = { ...updated[gIdx] };
+                                                            newGroup.name = e.target.value;
+                                                            updated[gIdx] = newGroup;
                                                             setFormData({ ...formData, variants: updated });
                                                         }}
                                                     />
@@ -441,7 +442,9 @@ export default function MenuEditPage() {
                                                         value={vGroup.type}
                                                         onChange={(e) => {
                                                             const updated = [...formData.variants];
-                                                            updated[gIdx].type = e.target.value;
+                                                            const newGroup = { ...updated[gIdx] };
+                                                            newGroup.type = e.target.value;
+                                                            updated[gIdx] = newGroup;
                                                             setFormData({ ...formData, variants: updated });
                                                         }}
                                                     >
@@ -469,7 +472,11 @@ export default function MenuEditPage() {
                                                                 value={opt.name}
                                                                 onChange={(e) => {
                                                                     const updated = [...formData.variants];
-                                                                    updated[gIdx].options[oIdx].name = e.target.value;
+                                                                    const newGroup = { ...updated[gIdx] };
+                                                                    const newOptions = [...newGroup.options];
+                                                                    newOptions[oIdx] = { ...newOptions[oIdx], name: e.target.value };
+                                                                    newGroup.options = newOptions;
+                                                                    updated[gIdx] = newGroup;
                                                                     setFormData({ ...formData, variants: updated });
                                                                 }}
                                                             />
@@ -482,7 +489,11 @@ export default function MenuEditPage() {
                                                                     value={opt.price}
                                                                     onChange={(e) => {
                                                                         const updated = [...formData.variants];
-                                                                        updated[gIdx].options[oIdx].price = Number(e.target.value);
+                                                                        const newGroup = { ...updated[gIdx] };
+                                                                        const newOptions = [...newGroup.options];
+                                                                        newOptions[oIdx] = { ...newOptions[oIdx], price: Number(e.target.value) };
+                                                                        newGroup.options = newOptions;
+                                                                        updated[gIdx] = newGroup;
                                                                         setFormData({ ...formData, variants: updated });
                                                                     }}
                                                                 />
@@ -491,7 +502,9 @@ export default function MenuEditPage() {
                                                                 type="button"
                                                                 onClick={async () => {
                                                                     const updated = [...formData.variants];
-                                                                    updated[gIdx].options = updated[gIdx].options.filter((_: any, i: number) => i !== oIdx);
+                                                                    const newGroup = { ...updated[gIdx] };
+                                                                    newGroup.options = newGroup.options.filter((_: any, i: number) => i !== oIdx);
+                                                                    updated[gIdx] = newGroup;
                                                                     setFormData({ ...formData, variants: updated });
                                                                 }}
                                                                 className="text-gray-300 hover:text-red-400"
@@ -504,7 +517,9 @@ export default function MenuEditPage() {
                                                         type="button"
                                                         onClick={async () => {
                                                             const updated = [...formData.variants];
-                                                            updated[gIdx].options.push({ id: "opt-" + Date.now(), name: "", price: 0 });
+                                                            const newGroup = { ...updated[gIdx] };
+                                                            newGroup.options = [...newGroup.options, { id: "opt-" + Date.now(), name: "", price: 0 }];
+                                                            updated[gIdx] = newGroup;
                                                             setFormData({ ...formData, variants: updated });
                                                         }}
                                                         className="text-[9px] font-black text-emerald-600 pl-1 uppercase tracking-wider"

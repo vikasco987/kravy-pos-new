@@ -146,6 +146,20 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
         });
     };
 
+    const handleUpdateVariantOption = (groupIdx: number, optionIdx: number, updates: any) => {
+        setLocal(prev => {
+            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
+            const newGroup = { ...newVariants[groupIdx] };
+            const newOptions = [...(Array.isArray(newGroup.options) ? newGroup.options : [])];
+            if (newOptions[optionIdx]) {
+                newOptions[optionIdx] = { ...newOptions[optionIdx], ...updates };
+            }
+            newGroup.options = newOptions;
+            newVariants[groupIdx] = newGroup;
+            return { ...prev, variants: newVariants };
+        });
+    };
+
     const handleDeleteVariantGroup = (idx: number) => {
         setLocal(prev => {
             const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
@@ -157,32 +171,26 @@ export default function ItemModal({ item, addonGroups = [], onSave, onClose, cat
     const handleAddVariantOption = (groupIdx: number) => {
         setLocal(prev => {
             const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
-            newVariants[groupIdx].options = [
-                ...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : []),
+            const newGroup = { ...newVariants[groupIdx] };
+            newGroup.options = [
+                ...(Array.isArray(newGroup.options) ? newGroup.options : []),
                 { id: crypto.randomUUID(), name: "New Option", price: 0 }
             ];
+            newVariants[groupIdx] = newGroup;
             return { ...prev, variants: newVariants };
         });
     };
 
-    const handleUpdateVariantOption = (groupIdx: number, optionIdx: number, updates: any) => {
-        setLocal(prev => {
-            const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
-            const newOptions = [...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : [])];
-            if (newOptions[optionIdx]) {
-                newOptions[optionIdx] = { ...newOptions[optionIdx], ...updates };
-            }
-            newVariants[groupIdx].options = newOptions;
-            return { ...prev, variants: newVariants };
-        });
-    };
+
 
     const handleDeleteVariantOption = (groupIdx: number, optionIdx: number) => {
         setLocal(prev => {
             const newVariants = [...(Array.isArray(prev.variants) ? prev.variants : [])];
-            const newOptions = [...(Array.isArray(newVariants[groupIdx].options) ? newVariants[groupIdx].options : [])];
+            const newGroup = { ...newVariants[groupIdx] };
+            const newOptions = [...(Array.isArray(newGroup.options) ? newGroup.options : [])];
             newOptions.splice(optionIdx, 1);
-            newVariants[groupIdx].options = newOptions;
+            newGroup.options = newOptions;
+            newVariants[groupIdx] = newGroup;
             return { ...prev, variants: newVariants };
         });
     };

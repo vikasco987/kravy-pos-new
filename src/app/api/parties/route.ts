@@ -214,8 +214,21 @@ export async function POST(req: NextRequest) {
 
     try {
       const cleanPhone = phone.replace(/[\s\-\(\)\+]/g, "").slice(-10);
-      const party = await prisma.party.create({
-        data: {
+      const party = await prisma.party.upsert({
+        where: {
+          phone_createdBy: {
+            phone: cleanPhone,
+            createdBy: effectiveId,
+          }
+        },
+        update: {
+          name,
+          address: address !== undefined ? address : undefined,
+          dob: dob ? new Date(dob) : undefined,
+          remarks: remarks !== undefined ? remarks : undefined,
+          status: status || undefined,
+        },
+        create: {
           name,
           phone: cleanPhone,
           address,
@@ -225,14 +238,9 @@ export async function POST(req: NextRequest) {
           createdBy: effectiveId,
         },
       });
-      return NextResponse.json(party, { status: 201 });
+      return NextResponse.json(party, { status: 200 });
     } catch (prismaErr: any) {
-      // handle unique constraint on phone (P2002)
-      if (prismaErr instanceof Prisma.PrismaClientKnownRequestError && prismaErr.code === "P2002") {
-        console.warn("Duplicate phone error creating party:", prismaErr.meta);
-        return NextResponse.json({ error: "Phone already exists" }, { status: 409 });
-      }
-      console.error("❌ Error creating party (prisma):", prismaErr);
+      console.error("❌ Error creating/updating party (prisma):", prismaErr);
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
   } catch (err) {

@@ -3878,3 +3878,33 @@ Import trace for requested module:
   syscall: 'open',
   path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
 }
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}
+[Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/vikas/.gemini/antigravity-ide/scratch/kravy-pos-new/.next/static/chunks/app/dashboard/menu/view/page.js'
+}

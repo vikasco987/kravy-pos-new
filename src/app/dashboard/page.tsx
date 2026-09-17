@@ -239,12 +239,12 @@ export default async function DashboardPage({
     const mode = (bill.paymentMode || "").toLowerCase();
     
     if (mode.startsWith("split (")) {
-      const cashMatch = mode.match(/cash:\s*([\d.]+)/);
+      const cashMatch = mode.match(/cash:\s*₹?\s*([\d.]+)/);
       if (cashMatch && cashMatch[1]) {
         cash += parseFloat(cashMatch[1]);
       }
       
-      const upiMatch = mode.match(/upi:\s*([\d.]+)/);
+      const upiMatch = mode.match(/upi:\s*₹?\s*([\d.]+)/);
       if (upiMatch && upiMatch[1]) {
         upi += parseFloat(upiMatch[1]);
       }
