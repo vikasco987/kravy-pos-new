@@ -509,10 +509,35 @@ export async function POST(req: NextRequest) {
             }
             console.log(`[BILL_MANAGER] billNumber collision detected. Advancing counter outside transaction to recover.`);
             if (profile?.id) {
-              await prisma.businessProfile.update({
-                where: { id: profile.id },
-                data: { billCounter: { increment: 1 } }
-              });
+              try {
+                const prefix = `INV/${yy}${mm}/`;
+                const maxBill = await prisma.billManager.findFirst({
+                  where: { clerkUserId: effectiveId, billNumber: { startsWith: prefix } },
+                  orderBy: { billNumber: 'desc' }
+                });
+                let nextCounter = 2;
+                if (maxBill && maxBill.billNumber) {
+                  const parts = maxBill.billNumber.split('/');
+                  if (parts.length === 3) {
+                    const lastNum = parseInt(parts[2], 10);
+                    if (!isNaN(lastNum)) {
+                      nextCounter = lastNum + 1;
+                    }
+                  }
+                }
+                const currentProfile = await prisma.businessProfile.findUnique({ where: { id: profile.id } });
+                const currentCounter = currentProfile?.billCounter || 0;
+                await prisma.businessProfile.update({
+                  where: { id: profile.id },
+                  data: { billCounter: Math.max(nextCounter, currentCounter + 1) }
+                });
+              } catch (recErr) {
+                console.error("[BILL_MANAGER] Recovery query failed", recErr);
+                await prisma.businessProfile.update({
+                  where: { id: profile.id },
+                  data: { billCounter: { increment: 1 } }
+                });
+              }
             }
           }
           if (attempts < 15) {
