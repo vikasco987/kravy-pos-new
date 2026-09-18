@@ -430,6 +430,7 @@ export default function MenuEditPage() {
                                                         className="flex-1 bg-transparent border-none p-0 font-bold text-sm outline-none placeholder:text-gray-300"
                                                         placeholder="Group Name (e.g. Size)"
                                                         value={vGroup.name}
+                                                        onChange={(e) => {
                                                             const updated = [...formData.variants];
                                                             const newGroup = { ...updated[gIdx] };
                                                             newGroup.name = e.target.value;
