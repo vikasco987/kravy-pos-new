@@ -298,6 +298,8 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
                 return tn.toString().padStart(3, '0');
               })();
 
+              if (!s('showToken')) return null;
+
               return (
                 <div className="text-right bill-token-container">
                   <div style={{ fontSize: 'calc(var(--r-details-size) - 2px)', fontWeight: '800', textTransform: 'uppercase' }}>Token</div>
@@ -618,10 +620,9 @@ const PrintTemplates: React.FC<PrintTemplatesProps> = (props) => {
               className="font-black italic tracking-widest uppercase mb-1" 
               style={{ fontSize: 'var(--r-greeting-size)', fontWeight: ps.greetingWeight || undefined }}
             >
-              {business?.greetingMessage || "Thank You!"}
+              {business?.greetingMessage || "Thank You 🙏 Visit Again!"}
             </div>
           )}
-          {s('showVisitAgain') && <div className="font-bold" style={{ fontSize: 'calc(var(--r-details-size) - 1px)' }}>Visit Again for Fresh Food</div>}
           {s('showPoweredBy') && <div className="mt-3 font-bold" style={{ fontSize: 'calc(var(--r-details-size) - 2px)' }}>Powered by Kravy</div>}
         </div>
       </div>
